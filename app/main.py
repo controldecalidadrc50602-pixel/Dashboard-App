@@ -12,8 +12,15 @@ from app.database import Base, engine
 import app.models
 from app.routers import auth, clients, reports, public, dashboard_global, imports, kpis
 
-# Crear tablas
-Base.metadata.create_all(bind=engine)
+BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+static_dir = os.path.join(BASE_DIR, "static")
+templates_dir = os.path.join(BASE_DIR, "templates")
+
+# Crear tablas protegidas contra fallos de inicio
+try:
+    Base.metadata.create_all(bind=engine)
+except Exception as e:
+    print(f"Advertencia al inicializar tablas de BD: {e}")
 
 
 app = FastAPI(title="Dashboard Reportes", version="1.0.0", docs_url="/api/docs")
@@ -27,9 +34,12 @@ app.add_middleware(
     expose_headers=["*"],
 )
 
-# Montar archivos estáticos
-app.mount("/static", StaticFiles(directory="static"), name="static")
-templates = Jinja2Templates(directory="templates")
+# Montar archivos estáticos si existen
+if os.path.exists(static_dir):
+    app.mount("/static", StaticFiles(directory=static_dir), name="static")
+
+templates = Jinja2Templates(directory=templates_dir)
+
 
 # Registrar routers de API
 app.include_router(auth.router)
