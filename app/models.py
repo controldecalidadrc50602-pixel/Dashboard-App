@@ -23,6 +23,8 @@ class Client(Base):
     imports = relationship("ReportImport", back_populates="client", cascade="all, delete-orphan")
     normalized_records = relationship("NormalizedRecord", back_populates="client", cascade="all, delete-orphan")
     kpi_results = relationship("KPIResult", back_populates="client", cascade="all, delete-orphan")
+    insights = relationship("AnalysisInsight", back_populates="client", cascade="all, delete-orphan")
+
 
 
 
@@ -84,6 +86,33 @@ class KPIResult(Base):
 
     client = relationship("Client", back_populates="kpi_results")
     kpi_config = relationship("KPIConfig", back_populates="kpi_results")
+    insights = relationship("AnalysisInsight", back_populates="kpi_result", cascade="all, delete-orphan")
+
+
+class AnalysisInsight(Base):
+    __tablename__ = "analysis_insights"
+    id = Column(Integer, primary_key=True, index=True)
+    client_id = Column(Integer, ForeignKey("clients.id"), nullable=False, index=True)
+    period = Column(String, nullable=False, index=True)  # YYYY-MM
+    analysis_type = Column(String, nullable=False)  # TARGET_COMPLIANCE, PERIOD_OVER_PERIOD, TREND, THRESHOLD_VARIATION, CONCENTRATION, DATA_QUALITY
+    severity = Column(String, default="INFO")  # INFO, POSITIVE, WARNING, CRITICAL, NOT_AVAILABLE
+    title = Column(String, nullable=False)
+    description = Column(Text, nullable=False)
+    kpi_config_id = Column(Integer, ForeignKey("kpi_configs.id"), nullable=True)
+    kpi_result_id = Column(Integer, ForeignKey("kpi_results.id"), nullable=True)
+    current_value = Column(Float, nullable=True)
+    reference_value = Column(Float, nullable=True)
+    delta = Column(Float, nullable=True)
+    delta_percent = Column(Float, nullable=True)
+    rule_id = Column(String, nullable=False)
+    rule_version = Column(String, default="v1.0")
+    source_references = Column(JSON, default=dict)
+    created_at = Column(DateTime, default=datetime.utcnow)
+
+    client = relationship("Client", back_populates="insights")
+    kpi_config = relationship("KPIConfig")
+    kpi_result = relationship("KPIResult", back_populates="insights")
+
 
 
 

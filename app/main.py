@@ -10,7 +10,7 @@ load_dotenv()
 
 from app.database import Base, engine
 import app.models
-from app.routers import auth, clients, reports, public, dashboard_global, imports, kpis
+from app.routers import auth, clients, reports, public, dashboard_global, imports, kpis, analysis
 
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 static_dir = os.path.join(BASE_DIR, "static")
@@ -49,6 +49,8 @@ app.include_router(public.router)
 app.include_router(dashboard_global.router)
 app.include_router(imports.router)
 app.include_router(kpis.router)
+app.include_router(analysis.router)
+
 
 
 

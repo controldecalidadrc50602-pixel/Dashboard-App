@@ -29,7 +29,18 @@ Todos los cambios notables realizados en este proyecto serán documentados en es
 - `app/auth.py`: Refuerzo de seguridad JWT e inspección de `SECRET_KEY`.
 - `app/routers/auth.py`, `clients.py`, `reports.py`, `public.py`: Integración de auditoría en operaciones clave.
 
+## [FASE 05] - 2026-09-01
+### Añadido
+- **Motor de Análisis Determinístico RC506 (`app/services/analysis_engine/`):** Transformación de resultados KPI en observaciones explicables sin IA, LLMs ni causalidad falsa.
+- **Catálogo Declarativo de Reglas (`rules_registry.py`):** Reglas declarativas para `TARGET_COMPLIANCE`, `PERIOD_OVER_PERIOD`, `TREND`, `THRESHOLD_VARIATION`, `CONCENTRATION` y `DATA_QUALITY`.
+- **Modelo ORM `AnalysisInsight` (`app/models.py`):** Entidad relacional para la persistencia e idempotencia de observaciones e insights por cliente y período.
+- **Endpoints de Análisis & Insights (`app/routers/analysis.py`):** Endpoints `/run`, `/clients/{id}/insights`, `/rules`, `/traceability`.
+- **Interfaz UI SPA Actualizada (`templates/admin.html`):** Sección "Análisis RC506", filtros por severidad (`CRITICAL`, `WARNING`, `POSITIVE`, `INFO`, `NOT_AVAILABLE`), tarjetas ejecutivas y modal de evidencia de origen.
+- **Suite de Pruebas Automatizadas (`tests/test_fase05.py`):** 17 nuevos casos de prueba alcanzando **83/83 pruebas totales aprobadas (100%)**.
+- **Documentación Completa de Fase 05 (`documentacion/FASE_05/`):** 8 documentos técnicos.
+
 ## [FASE 04] - 2026-09-01
+
 ### Añadido
 - **Motor KPI Dinámico & Configurable (`app/services/kpi_engine/`):** Configuración de KPIs independientes por cliente sin código hardcodeado.
 - **Evaluador de Fórmulas Deterministas sin `eval()` (`formula_evaluator.py`):** Algoritmos para `ratio`, `difference`, `percentage_gap`, `direct`, `sum`, `average` con división por cero segura.

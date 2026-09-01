@@ -334,8 +334,27 @@ class KPIResultOut(BaseModel):
     input_values: Dict[str, Any] = {}
     traceability_info: Dict[str, Any] = {}
     calculated_at: datetime
+class AnalysisInsightOut(BaseModel):
+    id: int
+    client_id: int
+    period: str
+    analysis_type: str
+    severity: str
+    title: str
+    description: str
+    kpi_config_id: Optional[int] = None
+    kpi_result_id: Optional[int] = None
+    current_value: Optional[float] = None
+    reference_value: Optional[float] = None
+    delta: Optional[float] = None
+    delta_percent: Optional[float] = None
+    rule_id: str
+    rule_version: str
+    source_references: Dict[str, Any] = {}
+    created_at: datetime
     class Config:
         from_attributes = True
+
 
 
 

@@ -2,7 +2,15 @@
 
 ## 📋 Registro de Cambios Realizados (Changelog)
 
+### Versión 1.7.0 (2026-09-01) - FASE 05: Motor de Análisis Determinístico RC506 y Capa de Insights Ejecutivos
+- **Capa Semántica & Motor de Análisis RC506:** Transformación determinística de KPIs evaluados en observaciones e insights explicables sin IA ni causalidad falsa.
+- **Catálogo Declarativo de Reglas:** Reglas declarativas para metas, comparativas MoM, tendencias históricas en 3+ períodos y calidad de datos.
+- **Entidad `AnalysisInsight`:** Persistencia relacional de observaciones con deltas absolutos/porcentuales y severidades (`INFO`, `POSITIVE`, `WARNING`, `CRITICAL`, `NOT_AVAILABLE`).
+- **Cadena Completa de Trazabilidad:** Inspección desde la observación hasta la fila del archivo RAW de origen.
+- **Pruebas Automatizadas:** **83/83 pruebas unitarias e integración en Pytest aprobadas al 100%**.
+
 ### Versión 1.6.0 (2026-09-01) - FASE 04: Motor KPI Dinámico, Configurable y Determinista
+
 - **Motor KPI Multicliente Desacoplado:** Definición dinámica de KPIs, objetivos, unidades y reglas por cliente sin hardcoding.
 - **Evaluador Determinista sin `eval()`:** `FormulaEvaluator` algebraico seguro con división por cero tolerante.
 - **Parsers Yeastar Muestras Reales:** Implementados `YeastarExtensionStatsParser`, `YeastarExtensionActivityParser` y `YeastarQueuePerformanceParser`.

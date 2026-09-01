@@ -44,6 +44,10 @@ C:\Users\Marilyn\AppData\Local\Programs\Python\Python313\python.exe run.py
 | `http://localhost:8000/api/admin/kpis/calculate` | API de Evaluación & Cálculo Determinista de KPIs |
 | `http://localhost:8000/api/admin/kpis/results` | API de Histórico de Resultados de KPIs |
 | `http://localhost:8000/api/admin/kpis/results/{id}/traceability` | API de Trazabilidad Completa de KPI |
+| `http://localhost:8000/api/admin/analysis/run` | API de Ejecución de Análisis Determinístico RC506 |
+| `http://localhost:8000/api/admin/analysis/clients/{id}/insights` | API de Consulta de Insights & Alertas por Cliente |
+| `http://localhost:8000/api/admin/analysis/insights/{id}/traceability` | API de Trazabilidad Fila RAW ➔ Insight RC506 |
+
 
 
 
