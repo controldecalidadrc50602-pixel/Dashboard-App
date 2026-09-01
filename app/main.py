@@ -13,8 +13,18 @@ import app.models
 from app.routers import auth, clients, reports, public, dashboard_global, imports, kpis, analysis
 
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-static_dir = os.path.join(BASE_DIR, "static")
-templates_dir = os.path.join(BASE_DIR, "templates")
+
+# Búsqueda robusta de directorios de plantillas y estáticos en Vercel Serverless
+candidate_template_dirs = [
+    os.path.join(BASE_DIR, "templates"),
+    os.path.join(os.getcwd(), "templates"),
+    "templates"
+]
+valid_template_dirs = [d for d in candidate_template_dirs if os.path.exists(d)]
+if not valid_template_dirs:
+    valid_template_dirs = [os.path.join(BASE_DIR, "templates")]
+
+templates = Jinja2Templates(directory=valid_template_dirs)
 
 # Crear tablas protegidas contra fallos de inicio
 try:
@@ -35,10 +45,16 @@ app.add_middleware(
 )
 
 # Montar archivos estáticos si existen
-if os.path.exists(static_dir):
-    app.mount("/static", StaticFiles(directory=static_dir), name="static")
+candidate_static_dirs = [
+    os.path.join(BASE_DIR, "static"),
+    os.path.join(os.getcwd(), "static"),
+    "static"
+]
+for s_dir in candidate_static_dirs:
+    if os.path.exists(s_dir):
+        app.mount("/static", StaticFiles(directory=s_dir), name="static")
+        break
 
-templates = Jinja2Templates(directory=templates_dir)
 
 
 # Registrar routers de API
