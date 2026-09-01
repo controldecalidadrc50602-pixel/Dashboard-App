@@ -1,0 +1,2210 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Dashboard Reportes · Admin</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<style>
+* { margin:0; padding:0; box-sizing:border-box; }
+body { font-family:'Inter',sans-serif; background:#f0f4f8; color:#1e2a3e; }
+
+/* ── Sidebar ── */
+.sidebar {
+  position:fixed; top:0; left:0; width:260px; height:100vh;
+  background:linear-gradient(180deg,#004d40,#00796b);
+  color:white; display:flex; flex-direction:column; z-index:100;
+  transition:width 0.3s;
+}
+.sidebar-logo {
+  padding:24px 20px; display:flex; align-items:center; gap:12px;
+  border-bottom:1px solid rgba(255,255,255,0.15);
+}
+.sidebar-logo .icon { font-size:1.8rem; }
+.sidebar-logo .text { font-size:1rem; font-weight:700; line-height:1.2; }
+.sidebar-logo .text span { font-size:0.7rem; opacity:0.7; display:block; }
+.nav-section { padding:16px 12px 8px; font-size:0.65rem; text-transform:uppercase;
+  letter-spacing:1px; opacity:0.5; font-weight:600; }
+.nav-item {
+  display:flex; align-items:center; gap:12px; padding:12px 20px;
+  cursor:pointer; transition:background 0.2s; border-radius:10px; margin:2px 8px;
+  font-size:0.9rem; font-weight:500;
+}
+.nav-item:hover, .nav-item.active { background:rgba(255,255,255,0.15); }
+.nav-item i { width:18px; text-align:center; }
+.sidebar-footer { margin-top:auto; padding:20px; border-top:1px solid rgba(255,255,255,0.15); }
+.logout-btn {
+  display:flex; align-items:center; gap:10px; cursor:pointer;
+  padding:10px 12px; border-radius:10px; transition:background 0.2s;
+  font-size:0.85rem; opacity:0.8;
+}
+.logout-btn:hover { background:rgba(255,255,255,0.15); opacity:1; }
+
+/* ── Main layout ── */
+.main-wrap { margin-left:260px; min-height:100vh; }
+.topbar {
+  background:white; padding:16px 28px; display:flex; align-items:center;
+  justify-content:space-between; border-bottom:1px solid #e2e8f0;
+  position:sticky; top:0; z-index:50;
+}
+.topbar-title { font-size:1.2rem; font-weight:700; color:#1e2a3e; }
+.topbar-subtitle { font-size:0.8rem; color:#64748b; }
+.page { display:none; padding:28px; animation:fadeIn 0.3s ease; }
+.page.active { display:block; }
+@keyframes fadeIn { from{opacity:0;transform:translateY(8px)} to{opacity:1;transform:translateY(0)} }
+
+/* ── Cards & sections ── */
+.card { background:white; border-radius:20px; padding:24px; margin-bottom:24px;
+  border:1px solid #e2e8f0; box-shadow:0 2px 8px rgba(0,0,0,0.03); }
+.card-title { font-size:1.1rem; font-weight:700; margin-bottom:20px;
+  display:flex; align-items:center; gap:10px; padding-bottom:12px;
+  border-bottom:2px solid #f1f5f9; }
+.card-title i { color:#009688; }
+
+/* ── KPI grid ── */
+.kpi-grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(160px,1fr)); gap:16px; margin-bottom:20px; }
+.kpi-card {
+  background:#f8fafc; border-radius:16px; padding:18px; text-align:center;
+  border-bottom:3px solid #009688; transition:transform 0.2s;
+}
+.kpi-card:hover { transform:translateY(-2px); }
+.kpi-num { font-size:1.8rem; font-weight:800; color:#00695c; }
+.kpi-lbl { font-size:0.7rem; text-transform:uppercase; color:#64748b; margin-top:6px; letter-spacing:0.5px; }
+
+/* ── Buttons ── */
+.btn { padding:10px 20px; border:none; border-radius:10px; font-size:0.875rem;
+  font-weight:600; cursor:pointer; transition:all 0.2s; font-family:'Inter',sans-serif; }
+.btn-primary { background:#009688; color:white; }
+.btn-primary:hover { background:#00796b; transform:translateY(-1px); box-shadow:0 4px 12px rgba(0,150,136,0.3); }
+.btn-secondary { background:#f1f5f9; color:#475569; }
+.btn-secondary:hover { background:#e2e8f0; }
+.btn-danger { background:#fef2f2; color:#dc2626; }
+.btn-danger:hover { background:#dc2626; color:white; }
+.btn-sm { padding:7px 14px; font-size:0.8rem; }
+.btn-icon { width:36px; height:36px; padding:0; display:inline-flex; align-items:center; justify-content:center; border-radius:8px; }
+.row-actions { display:flex; gap:8px; }
+
+/* ── Table ── */
+.table-wrap { overflow-x:auto; border-radius:12px; border:1px solid #e2e8f0; }
+table { width:100%; border-collapse:collapse; font-size:0.82rem; min-width:600px; }
+th { background:#f8fafc; padding:11px 12px; font-weight:600; border-bottom:2px solid #e2e8f0;
+  text-align:left; color:#475569; font-size:0.78rem; text-transform:uppercase; letter-spacing:0.5px; }
+td { padding:10px 12px; border-bottom:1px solid #f1f5f9; }
+tr:last-child td { border-bottom:none; }
+tr:hover td { background:#fafbfc; }
+.badge {
+  display:inline-block; padding:3px 10px; border-radius:20px; font-size:0.72rem; font-weight:600;
+}
+.badge-green { background:#d1fae5; color:#065f46; }
+.badge-yellow { background:#fef3c7; color:#92400e; }
+.badge-red { background:#fee2e2; color:#991b1b; }
+.badge-gray { background:#f1f5f9; color:#475569; }
+
+/* ── Form ── */
+.form-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(200px,1fr)); gap:16px; }
+.field { display:flex; flex-direction:column; gap:6px; }
+label { font-size:0.78rem; font-weight:600; color:#475569; }
+input, select, textarea {
+  padding:10px 13px; border:2px solid #e2e8f0; border-radius:10px;
+  font-size:0.9rem; font-family:'Inter',sans-serif; transition:border-color 0.2s;
+  outline:none; background:white;
+}
+input:focus, select:focus, textarea:focus { border-color:#009688; }
+.field-hint { font-size:0.72rem; color:#94a3b8; }
+
+/* ── Modal ── */
+.modal-overlay {
+  position:fixed; inset:0; background:rgba(0,0,0,0.5);
+  display:none; align-items:center; justify-content:center; z-index:1000;
+  padding:20px;
+}
+.modal-overlay.open { display:flex; }
+.modal {
+  background:white; border-radius:24px; width:100%; max-width:720px;
+  max-height:90vh; overflow-y:auto; padding:32px;
+  animation:fadeIn 0.25s ease;
+}
+.modal-header { display:flex; align-items:center; justify-content:space-between;
+  margin-bottom:24px; padding-bottom:16px; border-bottom:2px solid #f1f5f9; }
+.modal-title { font-size:1.2rem; font-weight:700; }
+.modal-close { background:none; border:none; font-size:1.4rem; cursor:pointer;
+  color:#64748b; padding:4px 8px; border-radius:8px; }
+.modal-close:hover { background:#f1f5f9; }
+.modal-footer { margin-top:24px; padding-top:16px; border-top:2px solid #f1f5f9;
+  display:flex; justify-content:flex-end; gap:12px; }
+.form-section { margin-bottom:24px; }
+.form-section-title { font-size:0.8rem; font-weight:700; text-transform:uppercase;
+  color:#009688; letter-spacing:1px; margin-bottom:14px;
+  padding-bottom:8px; border-bottom:1px solid #e0f2f1; }
+
+/* ── Charts ── */
+.charts-grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(380px,1fr)); gap:20px; }
+.chart-card { background:white; border-radius:16px; padding:20px; border:1px solid #e2e8f0; }
+.chart-card h4 { font-size:0.9rem; font-weight:600; color:#475569; margin-bottom:14px; }
+
+/* ── Client selector ── */
+.client-selector {
+  display:flex; align-items:center; gap:12px;
+}
+.client-avatar {
+  width:36px; height:36px; border-radius:10px; display:flex; align-items:center;
+  justify-content:center; font-weight:700; font-size:0.85rem; color:white;
+  background:#009688; flex-shrink:0;
+}
+select.client-select {
+  border-color:#e2e8f0; background:#f8fafc; font-weight:600;
+  padding:8px 12px;
+}
+
+/* ── Public link card ── */
+.link-card {
+  background:#f0fdf4; border:1px solid #bbf7d0; border-radius:14px;
+  padding:16px; margin-bottom:12px;
+}
+.link-url {
+  font-family:monospace; font-size:0.8rem; color:#064e3b; background:#dcfce7;
+  padding:8px 12px; border-radius:8px; margin:10px 0; word-break:break-all;
+}
+.copy-btn {
+  background:#009688; color:white; border:none; padding:6px 14px;
+  border-radius:8px; font-size:0.78rem; cursor:pointer; font-weight:600;
+}
+.copy-btn:hover { background:#00796b; }
+
+/* ── Trend indicators ── */
+.trend-up { color:#10b981; font-weight:600; }
+.trend-dn { color:#f59e0b; font-weight:600; }
+.trend-eq { color:#64748b; }
+
+/* ── Toast ── */
+.toast {
+  position:fixed; bottom:24px; right:24px; background:#1e2a3e; color:white;
+  padding:14px 20px; border-radius:14px; font-size:0.875rem; font-weight:500;
+  display:none; z-index:9999; animation:fadeIn 0.3s ease;
+  box-shadow:0 8px 24px rgba(0,0,0,0.2);
+}
+.toast.show { display:block; }
+
+/* ── Empty state ── */
+.empty-state {
+  text-align:center; padding:48px 24px; color:#94a3b8;
+}
+.empty-state i { font-size:3rem; margin-bottom:16px; display:block; }
+.empty-state h3 { font-size:1.1rem; color:#64748b; margin-bottom:8px; }
+
+/* ── Responsive ── */
+@media(max-width:768px){
+  .sidebar { width:0; overflow:hidden; }
+  .main-wrap { margin-left:0; }
+  .form-grid { grid-template-columns:1fr; }
+  .charts-grid { grid-template-columns:1fr; }
+}
+</style>
+</head>
+<body>
+
+<!-- ════════════════════ SIDEBAR ════════════════════ -->
+<div class="sidebar">
+  <div class="sidebar-logo">
+    <div class="icon"><i class="fas fa-chart-line"></i></div>
+    <div class="text">RC506 Reporting<span>Gestión & Analítica</span></div>
+  </div>
+  <div class="nav-section">Visión General</div>
+  <div class="nav-item active" data-page="dashboard"><i class="fas fa-globe"></i> Dashboard Global</div>
+  <div class="nav-item" data-page="individual"><i class="fas fa-chart-pie"></i> Dashboard Individual</div>
+  <div class="nav-item" data-page="clientes"><i class="fas fa-building"></i> Clientes</div>
+  <div class="nav-section">Datos</div>
+  <div class="nav-item" data-page="imports"><i class="fas fa-file-upload"></i> Ingesta de Archivos</div>
+  <div class="nav-item" data-page="kpis"><i class="fas fa-calculator"></i> Motor de KPIs</div>
+  <div class="nav-item" data-page="reportes"><i class="fas fa-table"></i> Reportes mensuales</div>
+  <div class="nav-item" data-page="links"><i class="fas fa-link"></i> Links públicos</div>
+
+
+  <div class="sidebar-footer">
+    <div class="logout-btn" id="logoutBtn">
+      <i class="fas fa-sign-out-alt"></i> Cerrar sesión
+    </div>
+  </div>
+</div>
+
+<!-- ════════════════════ MAIN ════════════════════ -->
+<div class="main-wrap">
+  <div class="topbar">
+    <div>
+      <div class="topbar-title" id="pageTitle">Dashboard Global RC506</div>
+      <div class="topbar-subtitle" id="pageSubtitle">Resumen ejecutivo consolidado de todos los clientes</div>
+    </div>
+    <div class="client-selector">
+      <span style="font-size:0.8rem;color:#64748b;font-weight:600;">Cliente:</span>
+      <select class="client-select" id="globalClientSelect" style="min-width:180px;">
+        <option value="">— Seleccionar —</option>
+      </select>
+    </div>
+  </div>
+
+  <!-- ── PAGE: DASHBOARD GLOBAL RC506 ── -->
+  <div class="page active" id="page-dashboard">
+    <!-- Header Banner -->
+    <div style="margin-bottom:20px; background:linear-gradient(135deg, #004d40, #00796b); color:white; padding:20px 24px; border-radius:16px; display:flex; justify-content:space-between; align-items:center;">
+      <div>
+        <h2 style="font-size:1.3rem; font-weight:700; margin-bottom:4px;"><i class="fas fa-globe"></i> Dashboard Global RC506</h2>
+        <p style="font-size:0.85rem; opacity:0.9;">Consolidado ejecutivo de operaciones multi-cliente</p>
+      </div>
+      <div style="text-align:right;">
+        <span style="font-size:0.75rem; text-transform:uppercase; letter-spacing:1px; opacity:0.8;">Último Período</span>
+        <div id="globalPeriodBadge" style="font-size:1.1rem; font-weight:800;">—</div>
+      </div>
+    </div>
+
+    <!-- Resumen Global KPIs -->
+    <div class="kpi-grid" id="globalSummaryKpis">
+      <div class="kpi-card"><div class="kpi-num" id="g-kpi-clients">—</div><div class="kpi-lbl">Clientes Activos</div></div>
+      <div class="kpi-card"><div class="kpi-num" id="g-kpi-with-data">—</div><div class="kpi-lbl">Clientes con Datos</div></div>
+      <div class="kpi-card" style="border-bottom-color:#10b981;"><div class="kpi-num" id="g-kpi-updated" style="color:#059669;">—</div><div class="kpi-lbl">Reportes Actualizados</div></div>
+      <div class="kpi-card" style="border-bottom-color:#f59e0b;"><div class="kpi-num" id="g-kpi-pending" style="color:#d97706;">—</div><div class="kpi-lbl">Reportes Pendientes</div></div>
+    </div>
+
+    <!-- Métricas Consolidadas RC506 -->
+    <div class="card">
+      <div class="card-title"><i class="fas fa-chart-bar"></i> Métricas Consolidadas RC506 (Métricas Comparables)</div>
+      <div class="kpi-grid" id="globalMetricsGrid">
+        <div class="kpi-card"><div class="kpi-num" id="gm-chats">—</div><div class="kpi-lbl">Total Chats</div></div>
+        <div class="kpi-card"><div class="kpi-num" id="gm-calls">—</div><div class="kpi-lbl">Total Llamadas</div></div>
+        <div class="kpi-card"><div class="kpi-num" id="gm-leads">—</div><div class="kpi-lbl">Total Leads</div></div>
+        <div class="kpi-card"><div class="kpi-num" id="gm-sales">—</div><div class="kpi-lbl">Total Ventas</div></div>
+        <div class="kpi-card"><div class="kpi-num" id="gm-csat">—</div><div class="kpi-lbl">CSAT Promedio</div></div>
+      </div>
+    </div>
+
+    <!-- Estado de Clientes -->
+    <div class="card">
+      <div class="card-title" style="justify-content:space-between;">
+        <span><i class="fas fa-users-cog"></i> Estado de Reporting por Cliente</span>
+        <button class="btn btn-secondary btn-sm" onclick="loadDashboardGlobal()"><i class="fas fa-sync-alt"></i> Actualizar</button>
+      </div>
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>Cliente</th>
+              <th>Último Reporte</th>
+              <th>Estado</th>
+              <th>KPIs Configurados</th>
+              <th>Reportes</th>
+              <th>Acciones</th>
+            </tr>
+          </thead>
+          <tbody id="clientStatusesBody">
+            <tr><td colspan="6" style="text-align:center;padding:24px;color:#94a3b8;">Cargando Dashboard Global...</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- Alertas Preliminares RC506 -->
+    <div class="card">
+      <div class="card-title"><i class="fas fa-exclamation-triangle" style="color:#f59e0b;"></i> Alertas Preliminares RC506</div>
+      <div id="alertsContainer" style="display:flex; flex-direction:column; gap:12px;">
+        <div style="color:#94a3b8; font-size:0.85rem;">Cargando alertas preliminares...</div>
+      </div>
+    </div>
+
+    <!-- Actividad Reciente (Audit Log) -->
+    <div class="card">
+      <div class="card-title"><i class="fas fa-history"></i> Actividad Reciente de Operaciones</div>
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>Fecha / Hora</th>
+              <th>Usuario</th>
+              <th>Acción</th>
+              <th>Tipo Recurso</th>
+              <th>ID Recurso</th>
+            </tr>
+          </thead>
+          <tbody id="auditLogsBody">
+            <tr><td colspan="5" style="text-align:center;padding:24px;color:#94a3b8;">Sin actividad registrada.</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── PAGE: DASHBOARD INDIVIDUAL ── -->
+  <div class="page" id="page-individual">
+    <div style="margin-bottom:16px; display:flex; justify-content:space-between; align-items:center;">
+      <button class="btn btn-secondary btn-sm" onclick="navToPage('dashboard')">
+        <i class="fas fa-arrow-left"></i> Volver al Dashboard Global RC506
+      </button>
+      <div id="individualClientHeaderTitle" style="font-weight:700; color:#00695c; font-size:1.05rem;"></div>
+    </div>
+
+    <div class="kpi-grid" id="dashKpis">
+      <div class="kpi-card"><div class="kpi-num" id="kpi-chats">—</div><div class="kpi-lbl">Total Chats</div></div>
+      <div class="kpi-card"><div class="kpi-num" id="kpi-leads">—</div><div class="kpi-lbl">Leads generados</div></div>
+      <div class="kpi-card"><div class="kpi-num" id="kpi-sales">—</div><div class="kpi-lbl">Ventas cerradas</div></div>
+      <div class="kpi-card"><div class="kpi-num" id="kpi-cierre">—</div><div class="kpi-lbl">% Cierre prom.</div></div>
+      <div class="kpi-card"><div class="kpi-num" id="kpi-csat">—</div><div class="kpi-lbl">CSAT promedio</div></div>
+    </div>
+    <div class="charts-grid" id="dashCharts">
+      <!-- Inyectado dinámicamente según módulos del cliente -->
+    </div>
+  </div>
+
+
+  <!-- ── PAGE: CLIENTES ── -->
+  <div class="page" id="page-clientes">
+    <div class="card">
+      <div class="card-title" style="justify-content:space-between;">
+        <span><i class="fas fa-building"></i> Clientes registrados</span>
+        <button class="btn btn-primary" onclick="openClientModal()"><i class="fas fa-plus"></i> Nuevo cliente</button>
+      </div>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Cliente</th><th>Descripción</th><th>Estado</th><th>Creado</th><th>Acciones</th></tr></thead>
+          <tbody id="clientsTableBody">
+            <tr><td colspan="5" style="text-align:center;padding:32px;color:#94a3b8;">Cargando...</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── PAGE: REPORTES ── -->
+  <div class="page" id="page-reportes">
+    <div class="card">
+      <div class="card-title" style="justify-content:space-between;">
+        <span><i class="fas fa-table"></i> Datos mensuales</span>
+        <div style="display:flex;gap:10px;align-items:center;">
+          <select id="reportYearFilter" class="btn btn-secondary" style="padding:8px 12px;">
+            <option value="">Todos los años</option>
+            <option value="2025">2025</option>
+            <option value="2026">2026</option>
+            <option value="2027">2027</option>
+          </select>
+          <button class="btn btn-primary" onclick="openReportModal()"><i class="fas fa-plus"></i> Agregar mes</button>
+        </div>
+      </div>
+      <div class="table-wrap">
+        <table>
+          <thead id="reportsTableHead">
+            <!-- Inyectado dinámicamente según módulos del cliente -->
+          </thead>
+          <tbody id="reportsTableBody">
+            <tr><td colspan="11" style="text-align:center;padding:32px;color:#94a3b8;">Selecciona un cliente para ver los reportes.</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── PAGE: LINKS PÚBLICOS ── -->
+  <div class="page" id="page-links">
+    <div class="card">
+      <div class="card-title" style="justify-content:space-between;">
+        <span><i class="fas fa-link"></i> Links públicos para clientes</span>
+        <button class="btn btn-primary" onclick="openLinkModal()"><i class="fas fa-plus"></i> Crear link</button>
+      </div>
+      <p style="color:#64748b;font-size:0.85rem;margin-bottom:20px;">
+        Genera links únicos para que tus clientes vean el reporte sin acceso al panel admin.
+        Tú controlas qué secciones son visibles y si tiene contraseña o no.
+      </p>
+      <div id="linksContainer">
+        <div class="empty-state"><i class="fas fa-link"></i><h3>No hay links creados</h3><p>Selecciona un cliente y crea el primer link.</p></div>
+      </div>
+  <!-- ── PAGE: INGESTA DE ARCHIVOS ── -->
+  <div class="page" id="page-imports">
+    <!-- Formulario de Ingesta -->
+    <div class="card">
+      <div class="card-title"><i class="fas fa-file-upload"></i> Ingesta & Conservación de Archivos Fuente</div>
+      <p style="color:#64748b;font-size:0.85rem;margin-bottom:20px;">
+        Carga archivos fuente de Botmaker (.tsv), Yeastar o genéricos (.csv, .xlsx).
+        El archivo original se almacena de forma inmutable con trazabilidad SHA-256 e inspección de estructura.
+      </p>
+      
+      <form id="importForm" onsubmit="uploadFileImport(event)" enctype="multipart/form-data">
+        <div class="form-grid">
+          <div class="field">
+            <label>Cliente *</label>
+            <select id="imp-client" required class="client-select">
+              <option value="">— Seleccionar cliente —</option>
+            </select>
+          </div>
+          <div class="field">
+            <label>Fuente *</label>
+            <select id="imp-source" required>
+              <option value="botmaker">Botmaker Chatbot</option>
+              <option value="yeastar">Yeastar Call Center</option>
+              <option value="manual">Ingreso Manual / Genérico</option>
+            </select>
+          </div>
+          <div class="field">
+            <label>Tipo de Reporte</label>
+            <select id="imp-report-type">
+              <option value="users">Botmaker: users (tsv)</option>
+              <option value="operatorsSessionsDebug">Botmaker: operatorsSessionsDebug (tsv)</option>
+              <option value="sessionStartingCauses">Botmaker: sessionStartingCauses (tsv)</option>
+              <option value="Extension">Yeastar: Extension</option>
+              <option value="Call Center">Yeastar: Call Center</option>
+              <option value="Call Activity">Yeastar: Call Activity</option>
+              <option value="AI Reports">Yeastar: AI Reports</option>
+              <option value="generic">Genérico / Auto-detectar</option>
+            </select>
+          </div>
+          <div class="field">
+            <label>Período (Opcional - YYYY-MM)</label>
+            <input type="text" id="imp-period" placeholder="Ej: 2026-08 (o auto-detectar)">
+          </div>
+          <div class="field" style="grid-column:1/-1;">
+            <label>Archivo Fuente * (.tsv, .csv, .xlsx, .txt)</label>
+            <input type="file" id="imp-file" required accept=".tsv,.csv,.xlsx,.xls,.txt">
+          </div>
+        </div>
+        <div style="margin-top:20px; text-align:right;">
+          <button type="submit" class="btn btn-primary" id="btnUploadImport">
+            <i class="fas fa-upload"></i> Cargar & Validar Archivo
+          </button>
+        </div>
+      </form>
+    </div>
+
+    <!-- Historial de Importaciones -->
+    <div class="card">
+      <div class="card-title" style="justify-content:space-between;">
+        <span><i class="fas fa-history"></i> Historial de Ingestas & Almacenamiento RAW</span>
+        <button class="btn btn-secondary btn-sm" onclick="loadImportsHistory()"><i class="fas fa-sync-alt"></i> Actualizar</button>
+      </div>
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>Fecha / Hora</th>
+              <th>Cliente</th>
+              <th>Fuente</th>
+              <th>Tipo Reporte</th>
+              <th>Período</th>
+              <th>Archivo Original</th>
+              <th>Hash SHA-256</th>
+              <th>Registros</th>
+              <th>Estado</th>
+              <th>Acción</th>
+            </tr>
+          </thead>
+          <tbody id="importsTableBody">
+            <tr><td colspan="10" style="text-align:center;padding:24px;color:#94a3b8;">Cargando historial de importaciones...</td></tr>
+          </tbody>
+        </table>
+  <!-- ── PAGE: MOTOR DE KPIS ── -->
+  <div class="page" id="page-kpis">
+    <div class="card">
+      <div class="card-title" style="justify-content:space-between;">
+        <span><i class="fas fa-calculator"></i> Configuración de KPIs Dinámicos por Cliente</span>
+        <button class="btn btn-primary" onclick="openKpiModal()"><i class="fas fa-plus"></i> Nuevo KPI</button>
+      </div>
+      <p style="color:#64748b;font-size:0.85rem;margin-bottom:20px;">
+        Configura KPIs dinámicos, objetivos por cliente, fórmulas deterministas, unidades y reglas de dirección.
+      </p>
+
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>Código / Nombre</th>
+              <th>Fuente / Tipo</th>
+              <th>Fórmula</th>
+              <th>Meta / Target</th>
+              <th>Dirección</th>
+              <th>Unidad</th>
+              <th>Estado</th>
+              <th>Acción</th>
+            </tr>
+          </thead>
+          <tbody id="kpiConfigsTableBody">
+            <tr><td colspan="8" style="text-align:center;padding:24px;color:#94a3b8;">Cargando configuraciones de KPI...</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- Historial y Resultados de KPIs -->
+    <div class="card">
+      <div class="card-title" style="justify-content:space-between;">
+        <span><i class="fas fa-chart-line"></i> Resultados & Evaluación Determinista de KPIs</span>
+        <div style="display:flex;gap:10px;">
+          <input type="text" id="kpiCalcPeriod" placeholder="Ej: 2026-08" style="width:140px;" value="2026-08">
+          <button class="btn btn-primary btn-sm" onclick="calculateKpisForClient()"><i class="fas fa-play"></i> Calcular / Evaluar</button>
+        </div>
+      </div>
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>Período</th>
+              <th>KPI</th>
+              <th>Fuente</th>
+              <th>Valor Calculado</th>
+              <th>Meta / Target</th>
+              <th>Resultado / Estado</th>
+              <th>Fórmula Utilizada</th>
+              <th>Acción</th>
+            </tr>
+          </thead>
+          <tbody id="kpiResultsTableBody">
+            <tr><td colspan="8" style="text-align:center;padding:24px;color:#94a3b8;">Selecciona un cliente para ver resultados de KPIs.</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</div><!-- /main-wrap -->
+
+
+
+<!-- ════════════════════ MODALS ════════════════════ -->
+
+<!-- Modal: Preview de Importación -->
+<div class="modal-overlay" id="previewModal">
+  <div class="modal" style="max-width:920px;">
+    <div class="modal-header">
+      <div class="modal-title" id="previewModalTitle"><i class="fas fa-file-alt"></i> Vista Previa & Validación RAW</div>
+      <button class="modal-close" onclick="closeModal('previewModal')">✕</button>
+    </div>
+    
+    <div id="previewModalContent">
+      <div style="text-align:center;padding:24px;color:#94a3b8;">Cargando vista previa...</div>
+    </div>
+
+    <div class="modal-footer">
+      <button class="btn btn-secondary" onclick="closeModal('previewModal')">Cerrar</button>
+    </div>
+  </div>
+</div>
+
+<!-- Modal: Resumen Normalizado & Métricas Base -->
+<div class="modal-overlay" id="normalizedModal">
+  <div class="modal" style="max-width:920px;">
+    <div class="modal-header">
+      <div class="modal-title" id="normalizedModalTitle"><i class="fas fa-cubes"></i> Resumen Normalizado & Métricas Base Operativas</div>
+      <button class="modal-close" onclick="closeModal('normalizedModal')">✕</button>
+    </div>
+    
+    <div id="normalizedModalContent">
+      <div style="text-align:center;padding:24px;color:#94a3b8;">Cargando resumen normalizado...</div>
+    </div>
+
+<!-- Modal: Crear/Editar KPI -->
+<div class="modal-overlay" id="kpiModal">
+  <div class="modal" style="max-width:700px;">
+    <div class="modal-header">
+      <div class="modal-title" id="kpiModalTitle"><i class="fas fa-cog"></i> Configurar KPI Dinámico</div>
+      <button class="modal-close" onclick="closeModal('kpiModal')">✕</button>
+    </div>
+    
+    <form id="kpiForm" onsubmit="saveKpiConfig(event)">
+      <input type="hidden" id="kpi-edit-id">
+      <div class="form-grid">
+        <div class="field">
+          <label>Código Único (Identifier) *</label>
+          <input type="text" id="kpi-code" required placeholder="Ej: sla_citas, abandon_rate">
+        </div>
+        <div class="field">
+          <label>Nombre Comercial *</label>
+          <input type="text" id="kpi-name" required placeholder="Ej: SLA de Citas, Tasa de Abandono">
+        </div>
+        <div class="field">
+          <label>Fuente de Datos *</label>
+          <select id="kpi-source" required>
+            <option value="botmaker">Botmaker Chatbot</option>
+            <option value="yeastar">Yeastar Call Center</option>
+            <option value="manual">Manual / Genérico</option>
+          </select>
+        </div>
+        <div class="field">
+          <label>Familia / Report Type</label>
+          <input type="text" id="kpi-report-type" placeholder="Ej: users, queue, extension">
+        </div>
+        <div class="field">
+          <label>Meta / Target (Opcional - Vaciado = NO_TARGET)</label>
+          <input type="number" step="any" id="kpi-target" placeholder="Ej: 90.0 (dejar vacío si no posee target)">
+        </div>
+        <div class="field">
+          <label>Tipo de Fórmula *</label>
+          <select id="kpi-formula-type" required>
+            <option value="ratio">Ratio / Porcentaje (a / b * 100)</option>
+            <option value="direct">Directo (Usar valor métrica)</option>
+            <option value="difference">Diferencia (a - b)</option>
+            <option value="percentage_gap">Gap Porcentual ((a - b) / b * 100)</option>
+            <option value="average">Promedio (avg(inputs))</option>
+          </select>
+        </div>
+        <div class="field" style="grid-column:1/-1;">
+          <label>Métricas de Entrada (Separadas por comas)</label>
+          <input type="text" id="kpi-inputs" placeholder="Ej: answered, total (o total_messages)">
+        </div>
+        <div class="field">
+          <label>Dirección del Indicador *</label>
+          <select id="kpi-direction">
+            <option value="higher_is_better">Mayor es mejor (higher_is_better)</option>
+            <option value="lower_is_better">Menor es mejor (lower_is_better)</option>
+            <option value="range">Rango objetivo (range)</option>
+          </select>
+        </div>
+        <div class="field">
+          <label>Unidad de Medida</label>
+          <select id="kpi-unit">
+            <option value="percentage">Porcentaje (%)</option>
+            <option value="count">Conteo / Cantidad</option>
+            <option value="seconds">Segundos (s)</option>
+            <option value="duration">Duración (HH:MM:SS)</option>
+            <option value="NOT_VERIFIED">No Verificado</option>
+          </select>
+        </div>
+        <div class="field" style="grid-column:1/-1;">
+          <label>Descripción</label>
+          <input type="text" id="kpi-desc" placeholder="Descripción explicativa de la regla de negocio">
+        </div>
+      </div>
+
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" onclick="closeModal('kpiModal')">Cancelar</button>
+        <button type="submit" class="btn btn-primary"><i class="fas fa-save"></i> Guardar KPI</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- Modal: Trazabilidad KPI -->
+<div class="modal-overlay" id="kpiTraceabilityModal">
+  <div class="modal" style="max-width:800px;">
+    <div class="modal-header">
+      <div class="modal-title"><i class="fas fa-microscope"></i> Trazabilidad Completa del Resultado KPI</div>
+      <button class="modal-close" onclick="closeModal('kpiTraceabilityModal')">✕</button>
+    </div>
+    
+    <div id="kpiTraceabilityModalContent">
+      <div style="text-align:center;padding:24px;color:#94a3b8;">Cargando trazabilidad...</div>
+    </div>
+
+    <div class="modal-footer">
+      <button class="btn btn-secondary" onclick="closeModal('kpiTraceabilityModal')">Cerrar</button>
+    </div>
+  </div>
+</div>
+
+
+
+
+<!-- Modal: Cliente -->
+<div class="modal-overlay" id="clientModal">
+  <div class="modal">
+    <div class="modal-header">
+      <div class="modal-title" id="clientModalTitle"><i class="fas fa-building"></i> Nuevo cliente</div>
+      <button class="modal-close" onclick="closeModal('clientModal')">✕</button>
+    </div>
+    <div class="form-grid">
+      <div class="field">
+        <label>Nombre del cliente *</label>
+        <input type="text" id="c-name" placeholder="Ej: Clínica Kidoz">
+      </div>
+      <div class="field">
+        <label>Texto avatar (2-3 letras)</label>
+        <input type="text" id="c-logo" maxlength="3" placeholder="RC">
+      </div>
+      <div class="field">
+        <label>Color principal</label>
+        <input type="color" id="c-color" value="#009688">
+      </div>
+      <div class="field" style="grid-column:1/-1;">
+        <label>Descripción</label>
+        <textarea id="c-desc" rows="2" placeholder="Descripción opcional..."></textarea>
+      </div>
+    </div>
+
+    <div class="form-section" style="margin-top:20px;">
+      <div class="form-section-title">⚙️ Módulos KPI Habilitados para este cliente</div>
+      <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:10px;">
+        <label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-weight:500;font-size:0.85rem;">
+          <input type="checkbox" class="c-kpi-mod" value="chat_sales" checked> 💬 Chats, Leads & Ventas
+        </label>
+        <label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-weight:500;font-size:0.85rem;">
+          <input type="checkbox" class="c-kpi-mod" value="appointments" checked> 📅 Confirmaciones Cita
+        </label>
+        <label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-weight:500;font-size:0.85rem;">
+          <input type="checkbox" class="c-kpi-mod" value="calls" checked> 📞 Llamadas Detalladas
+        </label>
+        <label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-weight:500;font-size:0.85rem;">
+          <input type="checkbox" class="c-kpi-mod" value="quality_kidoz" checked> ⭐ Calidad de Atención
+        </label>
+        <label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-weight:500;font-size:0.85rem;">
+          <input type="checkbox" class="c-kpi-mod" value="petopia_vol"> 🐾 Volumen Yeastar & Botmaker
+        </label>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-secondary" onclick="closeModal('clientModal')">Cancelar</button>
+      <button class="btn btn-primary" id="saveClientBtn" onclick="saveClient()"><i class="fas fa-save"></i> Guardar</button>
+    </div>
+    <input type="hidden" id="c-id">
+  </div>
+</div>
+
+<!-- Modal: Reporte mensual -->
+<div class="modal-overlay" id="reportModal">
+  <div class="modal">
+    <div class="modal-header">
+      <div class="modal-title" id="reportModalTitle"><i class="fas fa-plus-circle"></i> Agregar mes</div>
+      <button class="modal-close" onclick="closeModal('reportModal')">✕</button>
+    </div>
+
+    <div class="form-section">
+      <div class="form-section-title">📅 Período</div>
+      <div class="form-grid">
+        <div class="field">
+          <label>Año *</label>
+          <input type="number" id="r-year" value="2026" min="2020" max="2030">
+        </div>
+        <div class="field">
+          <label>Mes *</label>
+          <select id="r-month">
+            <option value="1">Enero</option><option value="2">Febrero</option>
+            <option value="3">Marzo</option><option value="4">Abril</option>
+            <option value="5">Mayo</option><option value="6">Junio</option>
+            <option value="7">Julio</option><option value="8">Agosto</option>
+            <option value="9">Septiembre</option><option value="10">Octubre</option>
+            <option value="11">Noviembre</option><option value="12">Diciembre</option>
+          </select>
+        </div>
+      </div>
+    </div>
+
+    <div class="form-section" id="sec-mod-chat_sales">
+      <div class="form-section-title">💬 KPIs de Chat</div>
+      <div class="form-grid">
+        <div class="field"><label>Chats gestionados</label><input type="number" id="r-chats" value="0" min="0"></div>
+        <div class="field"><label>Leads generados</label><input type="number" id="r-leads" value="0" min="0"></div>
+        <div class="field"><label>Ventas cerradas</label><input type="number" id="r-sales" value="0" min="0"></div>
+        <div class="field"><label>Confirmaciones de cita</label><input type="number" id="r-confirmations" value="0" min="0"></div>
+        <div class="field"><label>Tickets de soporte</label><input type="number" id="r-support" value="0" min="0"></div>
+        <div class="field"><label>CSAT (0-5)</label><input type="number" id="r-csat" value="4.5" min="0" max="5" step="0.01"></div>
+      </div>
+    </div>
+
+    <div class="form-section" id="sec-mod-calls">
+      <div class="form-section-title">📞 Llamadas</div>
+      <div class="form-grid">
+        <div class="field"><label>Total llamadas</label><input type="number" id="r-total-calls" value="0" min="0"></div>
+        <div class="field"><label>Llamadas contestadas</label><input type="number" id="r-answered" value="0" min="0"></div>
+        <div class="field"><label>% Tasa de contacto</label><input type="number" id="r-contact-rate" value="0" min="0" max="100" step="0.1"></div>
+        <div class="field"><label>Entrantes totales</label><input type="number" id="r-inbound" value="0" min="0"></div>
+        <div class="field"><label>Entrantes contestadas</label><input type="number" id="r-inbound-ans" value="0" min="0"></div>
+        <div class="field"><label>Salientes totales</label><input type="number" id="r-outbound" value="0" min="0"></div>
+        <div class="field"><label>Salientes contestadas</label><input type="number" id="r-outbound-ans" value="0" min="0"></div>
+      </div>
+    </div>
+
+    <div class="form-section" id="sec-mod-quality_kidoz">
+      <div class="form-section-title">⭐ Calidad de Atención</div>
+      <div class="form-grid">
+        <div class="field"><label>Óptimas (llamadas)</label><input type="number" id="r-kid-opt-c" value="0" min="0"></div>
+        <div class="field"><label>Óptimas (chats)</label><input type="number" id="r-kid-opt-ch" value="0" min="0"></div>
+        <div class="field"><label>Aceptables (llamadas)</label><input type="number" id="r-kid-acc-c" value="0" min="0"></div>
+        <div class="field"><label>Aceptables (chats)</label><input type="number" id="r-kid-acc-ch" value="0" min="0"></div>
+        <div class="field"><label>Deficientes (llamadas)</label><input type="number" id="r-kid-def-c" value="0" min="0"></div>
+        <div class="field"><label>Deficientes (chats)</label><input type="number" id="r-kid-def-ch" value="0" min="0"></div>
+        <div class="field"><label>Total evaluaciones</label><input type="number" id="r-kid-total" value="0" min="0"></div>
+        <div class="field"><label>% Óptimo</label><input type="number" id="r-kid-pct" value="0" min="0" max="100" step="0.1"></div>
+      </div>
+    </div>
+
+    <div class="form-section" id="sec-mod-petopia_vol">
+      <div class="form-section-title">🐾 Volumen Yeastar & Botmaker</div>
+      <div class="form-grid">
+        <div class="field"><label>Yeastar (Llamadas Agentes)</label><input type="number" id="r-pet-yeastar" value="0" min="0"></div>
+        <div class="field"><label>Botmaker (Interacciones Bot)</label><input type="number" id="r-pet-botmaker" value="0" min="0"></div>
+      </div>
+    </div>
+
+    <div class="form-section">
+      <div class="form-section-title">📝 Notas del mes</div>
+      <div class="field">
+        <textarea id="r-notes" rows="3" placeholder="Observaciones, highlights o contexto del mes..."></textarea>
+      </div>
+    </div>
+
+    <div class="modal-footer">
+      <button class="btn btn-secondary" onclick="closeModal('reportModal')">Cancelar</button>
+      <button class="btn btn-primary" id="saveReportBtn" onclick="saveReport()"><i class="fas fa-save"></i> Guardar</button>
+    </div>
+    <input type="hidden" id="r-id">
+  </div>
+</div>
+
+<!-- Modal: Link público -->
+<div class="modal-overlay" id="linkModal">
+  <div class="modal">
+    <div class="modal-header">
+      <div class="modal-title"><i class="fas fa-link"></i> Crear link público</div>
+      <button class="modal-close" onclick="closeModal('linkModal')">✕</button>
+    </div>
+    <div class="form-section">
+      <div class="form-section-title">📋 Información del link</div>
+      <div class="form-grid">
+        <div class="field" style="grid-column:1/-1;">
+          <label>Título del reporte (visible al cliente) *</label>
+          <input type="text" id="lk-title" placeholder="Informe de Gestión · Enero-Agosto 2026">
+        </div>
+        <div class="field" style="grid-column:1/-1;">
+          <label>Descripción</label>
+          <textarea id="lk-desc" rows="2" placeholder="Descripción breve visible al cliente..."></textarea>
+        </div>
+      </div>
+    </div>
+    <div class="form-section">
+      <div class="form-section-title">📅 Filtro de período (opcional)</div>
+      <div class="form-grid">
+        <div class="field"><label>Año</label><input type="number" id="lk-year" placeholder="2026" min="2020" max="2030"></div>
+        <div class="field"><label>Desde mes</label>
+          <select id="lk-from"><option value="">— Todos —</option>
+            <option value="1">Enero</option><option value="2">Febrero</option>
+            <option value="3">Marzo</option><option value="4">Abril</option>
+            <option value="5">Mayo</option><option value="6">Junio</option>
+            <option value="7">Julio</option><option value="8">Agosto</option>
+            <option value="9">Septiembre</option><option value="10">Octubre</option>
+            <option value="11">Noviembre</option><option value="12">Diciembre</option>
+          </select>
+        </div>
+        <div class="field"><label>Hasta mes</label>
+          <select id="lk-to"><option value="">— Todos —</option>
+            <option value="1">Enero</option><option value="2">Febrero</option>
+            <option value="3">Marzo</option><option value="4">Abril</option>
+            <option value="5">Mayo</option><option value="6">Junio</option>
+            <option value="7">Julio</option><option value="8">Agosto</option>
+            <option value="9">Septiembre</option><option value="10">Octubre</option>
+            <option value="11">Noviembre</option><option value="12">Diciembre</option>
+          </select>
+        </div>
+      </div>
+    </div>
+    <div class="form-section">
+      <div class="form-section-title">👁 Secciones visibles para el cliente</div>
+      <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:10px;">
+        <label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-weight:500;">
+          <input type="checkbox" value="general" checked> 📊 Resumen general</label>
+        <label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-weight:500;">
+          <input type="checkbox" value="datosmes" checked> 📈 Datos por mes</label>
+        <label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-weight:500;">
+          <input type="checkbox" value="chats" checked> 💬 Chats</label>
+        <label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-weight:500;">
+          <input type="checkbox" value="llamadas" checked> 📞 Llamadas</label>
+        <label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-weight:500;">
+          <input type="checkbox" value="equipo" checked> 👥 Equipo</label>
+        <label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-weight:500;">
+          <input type="checkbox" value="calidad" checked> ⭐ Calidad</label>
+        <label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-weight:500;">
+          <input type="checkbox" value="soporte"> 📋 Soporte</label>
+        <label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-weight:500;">
+          <input type="checkbox" value="noagenda"> ❌ Cancelaciones</label>
+      </div>
+    </div>
+    <div class="form-section">
+      <div class="form-section-title">🔒 Seguridad (opcional)</div>
+      <div class="form-grid">
+        <div class="field">
+          <label>Contraseña del link</label>
+          <input type="password" id="lk-password" placeholder="Dejar vacío = sin contraseña">
+          <div class="field-hint">Si agregas contraseña, el cliente deberá ingresarla para ver el reporte.</div>
+        </div>
+        <div class="field">
+          <label>Expira el</label>
+          <input type="datetime-local" id="lk-expires">
+          <div class="field-hint">Dejar vacío = sin expiración.</div>
+        </div>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-secondary" onclick="closeModal('linkModal')">Cancelar</button>
+      <button class="btn btn-primary" onclick="saveLink()"><i class="fas fa-link"></i> Generar link</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<!-- ════════════════════ SCRIPTS ════════════════════ -->
+<script>
+const API = '';
+let TOKEN = localStorage.getItem('token');
+let currentClientId = null;
+let charts = {};
+
+// Guard: si no hay token, ir al login
+if (!TOKEN) window.location.href = '/';
+
+const headers = () => ({
+  'Content-Type': 'application/json',
+  'Authorization': 'Bearer ' + TOKEN
+});
+
+async function apiFetch(url, opts = {}) {
+  opts.headers = { ...headers(), ...(opts.headers || {}) };
+  const res = await fetch(url, opts);
+  if (res.status === 401) { localStorage.removeItem('token'); window.location.href = '/'; }
+  return res;
+}
+
+// ── State ───────────────────────────────────────────
+let allClients = [];
+
+// ── Navigation ──────────────────────────────────────
+function navToPage(page) {
+  document.querySelectorAll('.nav-item').forEach(i => {
+    i.classList.toggle('active', i.dataset.page === page);
+  });
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  const targetPage = document.getElementById('page-' + page);
+  if (targetPage) targetPage.classList.add('active');
+
+  const titles = {
+    dashboard: ['Dashboard Global RC506', 'Resumen ejecutivo consolidado de todos los clientes'],
+    individual: ['Dashboard Individual', 'Vista detallada de KPIs e histórico por cliente'],
+    clientes: ['Clientes', 'Gestión de clientes y cuentas'],
+    imports: ['Ingesta de Archivos', 'Carga, conservación inmutable y validación de fuentes'],
+    kpis: ['Motor de KPIs Dinámico', 'Configuración de reglas, metas deterministas e histórico de evaluación'],
+    reportes: ['Reportes mensuales', 'Ingreso y edición de datos por mes'],
+    links: ['Links públicos', 'Genera links para compartir con clientes']
+  };
+  if (titles[page]) {
+    document.getElementById('pageTitle').textContent = titles[page][0];
+    document.getElementById('pageSubtitle').textContent = titles[page][1];
+  }
+  if (page === 'dashboard') loadDashboardGlobal();
+  if (page === 'individual') loadDashboard();
+  if (page === 'clientes') loadClients();
+  if (page === 'imports') loadImportsHistory();
+  if (page === 'kpis') { loadKpiConfigs(); loadKpiResults(); }
+  if (page === 'reportes') loadReports();
+  if (page === 'links') loadLinks();
+}
+
+
+
+document.querySelectorAll('.nav-item').forEach(item => {
+  item.addEventListener('click', () => {
+    navToPage(item.dataset.page);
+  });
+});
+
+document.getElementById('logoutBtn').addEventListener('click', () => {
+  localStorage.removeItem('token');
+  window.location.href = '/';
+});
+
+// ── Dashboard Global RC506 ───────────────────────────
+async function loadDashboardGlobal() {
+  const res = await apiFetch('/api/admin/dashboard-global');
+  if (!res.ok) return;
+  const data = await res.json();
+
+  // Period Badge
+  document.getElementById('globalPeriodBadge').textContent = data.summary.latest_period.period_label || 'Sin datos';
+
+  // Summary KPIs
+  document.getElementById('g-kpi-clients').textContent = data.summary.total_active_clients;
+  document.getElementById('g-kpi-with-data').textContent = data.summary.clients_with_data;
+  document.getElementById('g-kpi-updated').textContent = data.summary.updated_reports_count;
+  document.getElementById('g-kpi-pending').textContent = data.summary.pending_reports_count;
+
+  // Global Metrics
+  document.getElementById('gm-chats').textContent = data.global_metrics.total_chats.toLocaleString('es');
+  document.getElementById('gm-calls').textContent = data.global_metrics.total_calls.toLocaleString('es');
+  document.getElementById('gm-leads').textContent = data.global_metrics.total_leads.toLocaleString('es');
+  document.getElementById('gm-sales').textContent = data.global_metrics.total_sales.toLocaleString('es');
+  document.getElementById('gm-csat').textContent = data.global_metrics.avg_csat;
+
+  // Client Statuses Table
+  const tbody = document.getElementById('clientStatusesBody');
+  if (!data.client_statuses.length) {
+    tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;padding:24px;color:#94a3b8;">No hay clientes registrados.</td></tr>';
+  } else {
+    tbody.innerHTML = data.client_statuses.map(cs => {
+      let badgeClass = 'badge-gray';
+      if (cs.status === 'actualizado') badgeClass = 'badge-green';
+      else if (cs.status === 'pendiente') badgeClass = 'badge-yellow';
+      else if (cs.status === 'requiere_configuracion') badgeClass = 'badge-red';
+      else if (cs.status === 'inactivo') badgeClass = 'badge-gray';
+
+      return `
+        <tr>
+          <td style="display:flex;align-items:center;gap:10px;">
+            <div class="client-avatar" style="background:${cs.color}">${cs.logo_text}</div>
+            <div><strong>${cs.name}</strong></div>
+          </td>
+          <td>${cs.period}</td>
+          <td><span class="badge ${badgeClass}">${cs.status_label}</span></td>
+          <td>${cs.kpis_count} KPIs</td>
+          <td>${cs.total_reports} reportes</td>
+          <td>
+            <button class="btn btn-sm btn-primary" onclick="selectClientAndNavToIndividual(${cs.id})">
+              <i class="fas fa-chart-pie"></i> Ver Dashboard
+            </button>
+          </td>
+        </tr>
+      `;
+    }).join('');
+  }
+
+  // Preliminary Alerts
+  const alertsContainer = document.getElementById('alertsContainer');
+  if (!data.preliminary_alerts.length) {
+    alertsContainer.innerHTML = '<div style="color:#059669; font-size:0.85rem; padding:8px 0;"><i class="fas fa-check-circle"></i> Todos los clientes están al día con sus reportes y configuración.</div>';
+  } else {
+    alertsContainer.innerHTML = data.preliminary_alerts.map(a => {
+      const bgColor = a.type === 'warning' ? '#fffbe6' : a.type === 'danger' ? '#fef2f2' : '#f0f9ff';
+      const borderColor = a.type === 'warning' ? '#ffe58f' : a.type === 'danger' ? '#fca5a5' : '#bae6fd';
+      const textColor = a.type === 'warning' ? '#873800' : a.type === 'danger' ? '#991b1b' : '#0369a1';
+      return `
+        <div style="background:${bgColor}; border:1px solid ${borderColor}; color:${textColor}; padding:12px 16px; border-radius:10px; display:flex; justify-content:space-between; align-items:center;">
+          <div>
+            <strong>[ALERTAS PRELIMINARES] ${a.title}</strong>
+            <div style="font-size:0.8rem; margin-top:2px;">${a.message}</div>
+          </div>
+          ${a.client_id ? `<button class="btn btn-sm btn-secondary" onclick="selectClientAndNavToIndividual(${a.client_id})">Ver cliente</button>` : ''}
+        </div>
+      `;
+    }).join('');
+  }
+
+  // Recent Activity (Audit Log)
+  const auditBody = document.getElementById('auditLogsBody');
+  if (!data.recent_activity.length) {
+    auditBody.innerHTML = '<tr><td colspan="5" style="text-align:center;padding:24px;color:#94a3b8;">Sin registros de auditoría.</td></tr>';
+  } else {
+    auditBody.innerHTML = data.recent_activity.map(al => `
+      <tr>
+        <td>${new Date(al.timestamp).toLocaleString('es')}</td>
+        <td><strong>${al.username}</strong></td>
+        <td><span class="badge badge-gray">${al.action}</span></td>
+        <td>${al.resource_type}</td>
+        <td>${al.resource_id || '—'}</td>
+      </tr>
+    `).join('');
+  }
+}
+
+function selectClientAndNavToIndividual(clientId) {
+  currentClientId = clientId;
+  const sel = document.getElementById('globalClientSelect');
+  if (sel) sel.value = clientId;
+  
+  const clientObj = getCurrentClientObj();
+  if (clientObj) {
+    document.getElementById('individualClientHeaderTitle').textContent = `Cliente: ${clientObj.name}`;
+  }
+  
+  navToPage('individual');
+}
+
+// ── Client selector ─────────────────────────────────
+async function loadClientSelector() {
+  const res = await apiFetch('/api/clients/');
+  if (!res.ok) return;
+  allClients = await res.json();
+  const sel = document.getElementById('globalClientSelect');
+  const impSel = document.getElementById('imp-client');
+  
+  if (sel) sel.innerHTML = '<option value="">— Seleccionar cliente —</option>';
+  if (impSel) impSel.innerHTML = '<option value="">— Seleccionar cliente —</option>';
+
+  allClients.forEach(c => {
+    if (sel) {
+      const opt = document.createElement('option');
+      opt.value = c.id; opt.textContent = c.name;
+      sel.appendChild(opt);
+    }
+    if (impSel) {
+      const opt2 = document.createElement('option');
+      opt2.value = c.id; opt2.textContent = c.name;
+      impSel.appendChild(opt2);
+    }
+  });
+  if (allClients.length > 0) {
+    if (!currentClientId || !allClients.some(c => c.id == currentClientId)) {
+      currentClientId = allClients[0].id;
+    }
+    if (sel) sel.value = currentClientId;
+    if (impSel) impSel.value = currentClientId;
+  }
+}
+
+document.getElementById('globalClientSelect').addEventListener('change', (e) => {
+  if (!e.target.value) return;
+  selectClientAndNavToIndividual(e.target.value);
+});
+
+// ── Ingesta de Archivos (Fase 02) ─────────────────────
+async function uploadFileImport(e) {
+  e.preventDefault();
+  const client_id = document.getElementById('imp-client').value;
+  const source_code = document.getElementById('imp-source').value;
+  const report_type = document.getElementById('imp-report-type').value;
+  const period = document.getElementById('imp-period').value;
+  const fileInput = document.getElementById('imp-file');
+
+  if (!client_id || !fileInput.files.length) {
+    return showToast('⚠️ Selecciona un cliente y un archivo fuente.', 'warn');
+  }
+
+  const formData = new FormData();
+  formData.append('file', fileInput.files[0]);
+  formData.append('client_id', client_id);
+  formData.append('source_code', source_code);
+  formData.append('report_type', report_type);
+  if (period) formData.append('period', period);
+
+  const btn = document.getElementById('btnUploadImport');
+  btn.disabled = true;
+  btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Cargando & Analizando...';
+
+  try {
+    const res = await fetch('/api/admin/imports/', {
+      method: 'POST',
+      headers: { 'Authorization': 'Bearer ' + TOKEN },
+      body: formData
+    });
+
+    if (res.status === 401) {
+      localStorage.removeItem('token');
+      window.location.href = '/';
+      return;
+    }
+
+    const data = await res.json();
+    if (res.ok || res.status === 201) {
+      showToast(data.status === 'DUPLICATE' ? '⚠️ Archivo duplicado detectado' : '✅ Archivo recibido e inmutablemente almacenado');
+      document.getElementById('imp-file').value = '';
+      loadImportsHistory();
+      viewImportPreview(data.id);
+    } else {
+      showToast('❌ Error: ' + (data.detail || 'Error al procesar archivo'), 'error');
+    }
+  } catch (err) {
+    showToast('❌ Error de conexión al subir archivo', 'error');
+  } finally {
+    btn.disabled = false;
+    btn.innerHTML = '<i class="fas fa-upload"></i> Cargar & Validar Archivo';
+  }
+}
+
+async function loadImportsHistory() {
+  const res = await apiFetch('/api/admin/imports/');
+  if (!res.ok) return;
+  const imports = await res.json();
+  const tbody = document.getElementById('importsTableBody');
+
+  if (!imports.length) {
+    tbody.innerHTML = '<tr><td colspan="10" style="text-align:center;padding:24px;color:#94a3b8;">No se han registrado importaciones de archivos fuente.</td></tr>';
+    return;
+  }
+
+  tbody.innerHTML = imports.map(imp => {
+    let badgeClass = 'badge-green';
+    if (imp.status === 'VALID_WITH_WARNINGS' || imp.status === 'PROCESSED_WITH_WARNINGS') badgeClass = 'badge-yellow';
+    else if (imp.status === 'INVALID') badgeClass = 'badge-red';
+    else if (imp.status === 'DUPLICATE') badgeClass = 'badge-gray';
+
+    const shortHash = imp.file_hash.substring(0, 10) + '...';
+    const sizeKb = (imp.file_size / 1024).toFixed(1) + ' KB';
+
+    const isProcessed = imp.status.startsWith('PROCESSED');
+
+    return `
+      <tr>
+        <td>${new Date(imp.created_at).toLocaleString('es')}</td>
+        <td><strong>${imp.client_name || 'Desconocido'}</strong></td>
+        <td><span class="badge badge-gray">${imp.source_code}</span></td>
+        <td>${imp.report_type || 'Genérico'}</td>
+        <td><strong>${imp.period || 'requiere_confirmacion'}</strong></td>
+        <td><span title="${imp.original_filename}">${imp.original_filename.length > 20 ? imp.original_filename.substring(0, 18) + '...' : imp.original_filename}</span></td>
+        <td><code style="font-size:0.75rem;" title="${imp.file_hash}">${shortHash}</code></td>
+        <td>${imp.records_count} reg (${sizeKb})</td>
+        <td><span class="badge ${badgeClass}">${imp.status}</span></td>
+        <td style="display:flex;gap:4px;">
+          <button class="btn btn-sm btn-secondary btn-icon" onclick="viewImportPreview(${imp.id})" title="Ver Preview RAW & Estructura">
+            <i class="fas fa-eye"></i>
+          </button>
+          <button class="btn btn-sm btn-primary btn-icon" onclick="processImport(${imp.id})" title="${isProcessed ? 'Reprocesar RAW' : 'Normalizar Registros'}">
+            <i class="fas fa-cog"></i>
+          </button>
+          ${isProcessed ? `
+            <button class="btn btn-sm btn-secondary btn-icon" onclick="viewNormalizedSummary(${imp.id})" title="Ver Métricas Base Operations">
+              <i class="fas fa-chart-bar"></i>
+            </button>
+          ` : ''}
+        </td>
+      </tr>
+    `;
+  }).join('');
+}
+
+async function processImport(importId) {
+  showToast('🔄 Procesando y normalizando registros...');
+  const res = await apiFetch(`/api/admin/imports/${importId}/process`, { method: 'POST' });
+  if (!res.ok) {
+    const err = await res.json();
+    return showToast('❌ Error al normalizar: ' + (err.detail || 'Error interno'), 'error');
+  }
+  const summary = await res.json();
+  showToast(`✅ Normalización completada (${summary.total_rows_processed} filas)`);
+  loadImportsHistory();
+  viewNormalizedSummary(importId);
+}
+
+async function viewNormalizedSummary(importId) {
+  openModal('normalizedModal');
+  const container = document.getElementById('normalizedModalContent');
+  container.innerHTML = '<div style="text-align:center;padding:32px;color:#94a3b8;"><i class="fas fa-spinner fa-spin fa-2x"></i><p style="margin-top:8px;">Calculando métricas operativas base y calidad...</p></div>';
+
+  const [resMetrics, resQuality] = await Promise.all([
+    apiFetch(`/api/admin/imports/${importId}/normalized-summary`),
+    apiFetch(`/api/admin/imports/${importId}/quality`)
+  ]);
+
+  if (!resMetrics.ok || !resQuality.ok) {
+    container.innerHTML = '<div style="color:#dc2626;padding:16px;">Error al cargar métricas de normalización.</div>';
+    return;
+  }
+
+  const data = await resMetrics.json();
+  const qual = await resQuality.json();
+
+  let metricsHTML = '';
+  for (const [k, m] of Object.entries(data.base_metrics || {})) {
+    if (m.value !== null) {
+      metricsHTML += `
+        <div style="background:#f8fafc;padding:14px;border-radius:10px;border:1px solid #e2e8f0;">
+          <div style="font-size:0.75rem;color:#64748b;font-weight:600;">${m.name}</div>
+          <div style="font-size:1.4rem;font-weight:700;color:#0f172a;margin:4px 0;">${typeof m.value === 'number' ? m.value.toLocaleString('es') : m.value} <span style="font-size:0.75rem;color:#64748b;">${m.unit}</span></div>
+          <div style="font-size:0.7rem;color:#94a3b8;" title="Fórmula: ${m.formula}">${m.definition}</div>
+        </div>
+      `;
+    }
+  }
+
+  let typiHTML = Object.entries(data.typifications_breakdown || {}).map(([t, count]) => `
+    <div style="display:flex;justify-content:space-between;font-size:0.8rem;padding:6px 0;border-bottom:1px dashed #e2e8f0;">
+      <span>${t}</span><strong>${count}</strong>
+    </div>
+  `).join('');
+
+  let traceHTML = (qual.sample_traceability || []).map(t => `
+    <tr>
+      <td>${t.row_number}</td>
+      <td><code>${t.record_id}</code></td>
+      <td><span class="badge badge-gray">${t.parser_version}</span></td>
+      <td>${t.event_id || 'N/A'}</td>
+      <td>${t.user_id || 'N/A'}</td>
+      <td><span class="badge ${t.quality_status === 'VALID' ? 'badge-green' : 'badge-yellow'}">${t.quality_status}</span></td>
+    </tr>
+  `).join('');
+
+  container.innerHTML = `
+    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:12px;margin-bottom:20px;background:#f1f5f9;padding:16px;border-radius:12px;">
+      <div><span style="font-size:0.75rem;color:#64748b;">Archivo / Fuente:</span><br><strong>${data.original_filename} (${data.source_code})</strong></div>
+      <div><span style="font-size:0.75rem;color:#64748b;">Cliente / Período:</span><br><strong>${data.client_name} / ${data.period}</strong></div>
+      <div><span style="font-size:0.75rem;color:#64748b;">Total Registros Normalizados:</span><br><strong>${data.summary.total_records} filas</strong></div>
+      <div><span style="font-size:0.75rem;color:#64748b;">Estado Normalización:</span><br><span class="badge badge-green">${data.status}</span></div>
+    </div>
+
+    <h4 style="font-size:0.9rem;font-weight:700;margin-bottom:12px;"><i class="fas fa-calculator"></i> Métricas Operativas Base (Derivadas de NORMALIZED)</h4>
+    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:12px;margin-bottom:24px;">
+      ${metricsHTML || '<div style="color:#94a3b8;">No existen métricas numéricas en este reporte.</div>'}
+    </div>
+
+    ${typiHTML ? `
+      <div style="margin-bottom:24px;">
+        <h4 style="font-size:0.85rem;font-weight:700;margin-bottom:8px;"><i class="fas fa-tags"></i> Desglose por Tipificación / Categoría</h4>
+        <div style="max-height:160px;overflow-y:auto;background:#fafafa;padding:12px;border-radius:8px;border:1px solid #eee;">
+          ${typiHTML}
+        </div>
+      </div>
+    ` : ''}
+
+    <h4 style="font-size:0.85rem;font-weight:700;margin-bottom:8px;"><i class="fas fa-microscope"></i> Trazabilidad por Fila (Fila Origen ➔ Registro Normalizado)</h4>
+    <div class="table-wrap" style="max-height:220px;overflow-y:auto;">
+      <table>
+        <thead>
+          <tr>
+            <th>Fila RAW</th>
+            <th>ID Record</th>
+            <th>Parser Version</th>
+            <th>Event / Sesión ID</th>
+            <th>User / Contact ID</th>
+            <th>Calidad</th>
+          </tr>
+        </thead>
+        <tbody>
+          ${traceHTML || '<tr><td colspan="6" style="text-align:center;">Sin trazabilidad disponible.</td></tr>'}
+        </tbody>
+      </table>
+    </div>
+  `;
+}
+
+
+async function viewImportPreview(importId) {
+  openModal('previewModal');
+  const container = document.getElementById('previewModalContent');
+  container.innerHTML = '<div style="text-align:center;padding:32px;color:#94a3b8;"><i class="fas fa-spinner fa-spin fa-2x"></i><p style="margin-top:8px;">Cargando vista previa RAW...</p></div>';
+
+  const res = await apiFetch(`/api/admin/imports/${importId}/preview`);
+  if (!res.ok) {
+    container.innerHTML = '<div style="color:#dc2626;padding:16px;">Error al cargar la vista previa.</div>';
+    return;
+  }
+
+  const data = await res.json();
+  let badgeClass = 'badge-green';
+  if (data.status === 'VALID_WITH_WARNINGS') badgeClass = 'badge-yellow';
+  else if (data.status === 'INVALID') badgeClass = 'badge-red';
+  else if (data.status === 'DUPLICATE') badgeClass = 'badge-gray';
+
+  let headersHTML = data.headers.map(h => `<th>${h}</th>`).join('');
+  let rowsHTML = data.sample_rows.map(row => `
+    <tr>${row.map(cell => `<td>${cell}</td>`).join('')}</tr>
+  `).join('');
+
+  let warningsHTML = (data.warnings || []).map(w => `
+    <div style="background:#fffbe6;border:1px solid #ffe58f;color:#873800;padding:8px 12px;border-radius:8px;font-size:0.8rem;margin-bottom:6px;">
+      ⚠️ [Fila ${w.row}] Campo '${w.field}': ${w.message}
+    </div>
+  `).join('');
+
+  let errorsHTML = (data.errors || []).map(e => `
+    <div style="background:#fef2f2;border:1px solid #fca5a5;color:#991b1b;padding:8px 12px;border-radius:8px;font-size:0.8rem;margin-bottom:6px;">
+      ❌ [Fila ${e.row}] Campo '${e.field}': ${e.message}
+    </div>
+  `).join('');
+
+  container.innerHTML = `
+    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:12px;margin-bottom:20px;background:#f8fafc;padding:16px;border-radius:12px;border:1px solid #e2e8f0;">
+      <div><span style="font-size:0.75rem;color:#64748b;">Archivo Original:</span><br><strong>${data.original_filename}</strong></div>
+      <div><span style="font-size:0.75rem;color:#64748b;">Cliente / Fuente:</span><br><strong>${data.client_name} (${data.source_code})</strong></div>
+      <div><span style="font-size:0.75rem;color:#64748b;">Tipo / Período:</span><br><strong>${data.report_type || 'Genérico'} / ${data.period}</strong></div>
+      <div><span style="font-size:0.75rem;color:#64748b;">Estado / Registros:</span><br><span class="badge ${badgeClass}">${data.status}</span> (${data.total_rows} filas)</div>
+    </div>
+
+    <div style="margin-bottom:16px;font-size:0.8rem;color:#475569;">
+      <strong>SHA-256 Hash:</strong> <code style="word-break:break-all;background:#e2e8f0;padding:2px 6px;border-radius:4px;">${data.file_hash}</code><br>
+      <strong>Formato / Encoding / Delimitador:</strong> ${data.file_format.toUpperCase()} | ${data.encoding} | <code>${data.delimiter === '\\t' ? 'TAB' : data.delimiter}</code>
+    </div>
+
+    ${errorsHTML || warningsHTML ? `
+      <div style="margin-bottom:20px;">
+        <h4 style="font-size:0.85rem;font-weight:700;margin-bottom:8px;">Validación Estructural & Errores por Fila:</h4>
+        ${errorsHTML}
+        ${warningsHTML}
+      </div>
+    ` : ''}
+
+    <h4 style="font-size:0.85rem;font-weight:700;margin-bottom:10px;"><i class="fas fa-table"></i> Vista Previa RAW (Primeras 10 filas)</h4>
+    <div class="table-wrap" style="max-height:300px;overflow-y:auto;">
+      <table>
+        <thead><tr>${headersHTML || '<th>Contenido RAW</th>'}</tr></thead>
+        <tbody>${rowsHTML || '<tr><td style="text-align:center;color:#94a3b8;">Sin filas legibles</td></tr>'}</tbody>
+      </table>
+    </div>
+  `;
+}
+
+
+
+function getCurrentClientObj() {
+  return allClients.find(c => c.id == currentClientId);
+}
+
+// ── Dashboard ────────────────────────────────────────
+async function loadDashboard() {
+  if (!currentClientId) return;
+  const clientObj = getCurrentClientObj();
+  const mods = clientObj ? (clientObj.kpi_modules || ['chat_sales','appointments','calls','quality_kidoz']) : ['chat_sales','appointments','calls','quality_kidoz'];
+  
+  const res = await apiFetch(`/api/clients/${currentClientId}/reports`);
+  if (!res.ok) return;
+  const reports = await res.json();
+  const dashKpis = document.getElementById('dashKpis');
+  const dashCharts = document.getElementById('dashCharts');
+  
+  if (!reports.length) {
+    dashKpis.innerHTML = '<div class="empty-state" style="grid-column:1/-1;"><i class="fas fa-chart-pie"></i><h3>Sin datos reportados</h3><p>Agrega los primeros reportes mensuales para este cliente.</p></div>';
+    dashCharts.innerHTML = '';
+    return;
+  }
+
+  // Render dynamic KPI cards based on client modules
+  let kpiHTML = '';
+  if (mods.includes('petopia_vol')) {
+    const totYeastar = reports.reduce((s, r) => s + (r.extra_data?.yeastar_calls || r.total_calls || 0), 0);
+    const totBotmaker = reports.reduce((s, r) => s + (r.extra_data?.botmaker_interactions || 0), 0);
+    const totCombined = totYeastar + totBotmaker;
+    const avgMonthly = Math.round(totCombined / reports.length);
+    kpiHTML += `
+      <div class="kpi-card"><div class="kpi-num">${totCombined.toLocaleString('es')}</div><div class="kpi-lbl">Total Interacciones</div></div>
+      <div class="kpi-card"><div class="kpi-num">${totYeastar.toLocaleString('es')}</div><div class="kpi-lbl">Yeastar (Agentes)</div></div>
+      <div class="kpi-card"><div class="kpi-num">${totBotmaker.toLocaleString('es')}</div><div class="kpi-lbl">Botmaker (Bot)</div></div>
+      <div class="kpi-card"><div class="kpi-num">${avgMonthly.toLocaleString('es')}</div><div class="kpi-lbl">Promedio mensual</div></div>
+    `;
+  }
+  if (mods.includes('chat_sales')) {
+    const totChats = reports.reduce((s, r) => s + r.chats, 0);
+    const totLeads = reports.reduce((s, r) => s + r.leads, 0);
+    const totSales = reports.reduce((s, r) => s + r.sales, 0);
+    const avgCierre = totLeads ? (totSales / totLeads * 100).toFixed(1) : 0;
+    kpiHTML += `
+      <div class="kpi-card"><div class="kpi-num">${totChats.toLocaleString('es')}</div><div class="kpi-lbl">Total Chats</div></div>
+      <div class="kpi-card"><div class="kpi-num">${totLeads.toLocaleString('es')}</div><div class="kpi-lbl">Leads generados</div></div>
+      <div class="kpi-card"><div class="kpi-num">${totSales.toLocaleString('es')}</div><div class="kpi-lbl">Ventas cerradas</div></div>
+      <div class="kpi-card"><div class="kpi-num">${avgCierre}%</div><div class="kpi-lbl">% Cierre prom.</div></div>
+    `;
+  }
+  if (mods.includes('quality_kidoz')) {
+    const avgCsat = (reports.reduce((s, r) => s + r.csat, 0) / reports.length).toFixed(2);
+    kpiHTML += `
+      <div class="kpi-card"><div class="kpi-num">${avgCsat}</div><div class="kpi-lbl">CSAT promedio</div></div>
+    `;
+  }
+  dashKpis.innerHTML = kpiHTML;
+
+  // Build Charts Grid HTML dynamically
+  let chartsHTML = '';
+  if (mods.includes('petopia_vol')) {
+    chartsHTML += `
+      <div class="chart-card"><h4><i class="fas fa-bar-chart"></i> Volumen Yeastar (Agentes) vs Botmaker (Bot)</h4><canvas id="ch-pet-yb"></canvas></div>
+      <div class="chart-card"><h4><i class="fas fa-chart-line"></i> Evolución de Interacciones Totales</h4><canvas id="ch-pet-tot"></canvas></div>
+    `;
+  }
+  if (mods.includes('chat_sales')) {
+    chartsHTML += `
+      <div class="chart-card"><h4><i class="fas fa-chart-line"></i> Evolución de Chats</h4><canvas id="ch-chats"></canvas></div>
+      <div class="chart-card"><h4><i class="fas fa-chart-bar"></i> Ventas por mes</h4><canvas id="ch-ventas"></canvas></div>
+      <div class="chart-card"><h4><i class="fas fa-percent"></i> Tasa de Cierre (%)</h4><canvas id="ch-cierre"></canvas></div>
+    `;
+  }
+  if (mods.includes('quality_kidoz')) {
+    chartsHTML += `
+      <div class="chart-card"><h4><i class="fas fa-star"></i> CSAT mensual</h4><canvas id="ch-csat"></canvas></div>
+      <div class="chart-card"><h4><i class="fas fa-shield-alt"></i> % Calidad Óptima</h4><canvas id="ch-kidoz"></canvas></div>
+    `;
+  }
+  if (mods.includes('calls')) {
+    chartsHTML += `
+      <div class="chart-card"><h4><i class="fas fa-phone"></i> Llamadas vs Tasa de Contacto</h4><canvas id="ch-llamadas"></canvas></div>
+    `;
+  }
+  dashCharts.innerHTML = chartsHTML;
+
+  // Render Charts JS
+  const labels = reports.map(r => r.month_name.substring(0,3));
+  if (mods.includes('petopia_vol')) {
+    renderChart('ch-pet-yb', 'bar', labels, [
+      { label:'Yeastar (Agentes)', data: reports.map(r=>r.extra_data?.yeastar_calls || r.total_calls || 0), backgroundColor:'#3b7cff' },
+      { label:'Botmaker (Bot)', data: reports.map(r=>r.extra_data?.botmaker_interactions || 0), backgroundColor:'#f59e0b' }
+    ]);
+    renderChart('ch-pet-tot', 'line', labels, [{ label:'Total Interacciones', data: reports.map(r=>(r.extra_data?.yeastar_calls || r.total_calls || 0)+(r.extra_data?.botmaker_interactions || 0)), borderColor:'#009688', backgroundColor:'rgba(0,150,136,0.1)', fill:true, tension:0.3 }]);
+  }
+  if (mods.includes('chat_sales')) {
+    renderChart('ch-chats', 'line', labels, [{ label:'Chats', data: reports.map(r=>r.chats), borderColor:'#009688', backgroundColor:'rgba(0,150,136,0.1)', fill:true, tension:0.3 }]);
+    renderChart('ch-ventas', 'bar', labels, [{ label:'Ventas', data: reports.map(r=>r.sales), backgroundColor:'#00695c' }]);
+    renderChart('ch-cierre', 'line', labels, [{ label:'% Cierre', data: reports.map(r=>r.closing_rate), borderColor:'#f59e0b', tension:0.3 }]);
+  }
+  if (mods.includes('quality_kidoz')) {
+    renderChart('ch-csat', 'line', labels, [{ label:'CSAT', data: reports.map(r=>r.csat), borderColor:'#8b5cf6', tension:0.3 }], {y:{min:0,max:5}});
+    renderChart('ch-kidoz', 'line', labels, [{ label:'% Calidad Óptima', data: reports.map(r=>r.kidoz_optimal_pct), borderColor:'#22c55e', tension:0.3 }], {y:{min:80,max:100}});
+  }
+  if (mods.includes('calls')) {
+    renderChart('ch-llamadas', 'line', labels, [
+      { label:'Llamadas', data: reports.map(r=>r.total_calls), borderColor:'#3b82f6', yAxisID:'y' },
+      { label:'% Contacto', data: reports.map(r=>r.contact_rate), borderColor:'#10b981', yAxisID:'y1' }
+    ], { y:{}, y1:{position:'right',min:70,max:100} });
+  }
+}
+
+function renderChart(id, type, labels, datasets, scales = {}) {
+  const el = document.getElementById(id);
+  if (!el) return;
+  if (charts[id]) charts[id].destroy();
+  charts[id] = new Chart(el, {
+    type, data: { labels, datasets },
+    options: { responsive:true, maintainAspectRatio:true, scales }
+  });
+}
+
+// ── Clients page ─────────────────────────────────────
+async function loadClients() {
+  const res = await apiFetch('/api/clients/');
+  if (!res.ok) return;
+  allClients = await res.json();
+  const tbody = document.getElementById('clientsTableBody');
+  if (!allClients.length) {
+    tbody.innerHTML = '<tr><td colspan="5"><div class="empty-state"><i class="fas fa-building"></i><h3>No hay clientes</h3><p>Crea el primer cliente con el botón de arriba.</p></div></td></tr>';
+    return;
+  }
+  tbody.innerHTML = allClients.map(c => `
+    <tr>
+      <td style="display:flex;align-items:center;gap:10px;">
+        <div class="client-avatar" style="background:${c.color}">${c.logo_text}</div>
+        <div>
+          <strong>${c.name}</strong>
+          <div style="font-size:0.7rem;color:#64748b;">Módulos: ${(c.kpi_modules || []).join(', ')}</div>
+        </div>
+      </td>
+      <td>${c.description || '<span style="color:#94a3b8">—</span>'}</td>
+      <td><span class="badge ${c.is_active ? 'badge-green' : 'badge-gray'}">${c.is_active ? 'Activo' : 'Inactivo'}</span></td>
+      <td>${new Date(c.created_at).toLocaleDateString('es')}</td>
+      <td>
+        <div class="row-actions">
+          <button class="btn btn-sm btn-secondary btn-icon" title="Editar" onclick="editClient(${JSON.stringify(c).replace(/"/g,'&quot;')})">
+            <i class="fas fa-edit"></i>
+          </button>
+          <button class="btn btn-sm btn-secondary btn-icon" title="Ver slides" onclick="window.open('/slides/${c.id}','_blank')">
+            <i class="fas fa-presentation-screen"></i>
+          </button>
+          <button class="btn btn-sm btn-danger btn-icon" title="Eliminar" onclick="deleteClient(${c.id},'${c.name}')">
+            <i class="fas fa-trash"></i>
+          </button>
+        </div>
+      </td>
+    </tr>
+  `).join('');
+}
+
+function openClientModal(client = null) {
+  document.getElementById('c-id').value = '';
+  document.getElementById('c-name').value = '';
+  document.getElementById('c-logo').value = '';
+  document.getElementById('c-color').value = '#009688';
+  document.getElementById('c-desc').value = '';
+  document.querySelectorAll('#clientModal input.c-kpi-mod').forEach(cb => {
+    cb.checked = ['chat_sales','appointments','calls','quality_kidoz'].includes(cb.value);
+  });
+  document.getElementById('clientModalTitle').textContent = '✨ Nuevo cliente';
+  openModal('clientModal');
+}
+
+function editClient(c) {
+  document.getElementById('c-id').value = c.id;
+  document.getElementById('c-name').value = c.name;
+  document.getElementById('c-logo').value = c.logo_text;
+  document.getElementById('c-color').value = c.color;
+  document.getElementById('c-desc').value = c.description || '';
+  const mods = c.kpi_modules || ['chat_sales','appointments','calls','quality_kidoz'];
+  document.querySelectorAll('#clientModal input.c-kpi-mod').forEach(cb => {
+    cb.checked = mods.includes(cb.value);
+  });
+  document.getElementById('clientModalTitle').textContent = '✏️ Editar cliente';
+  openModal('clientModal');
+}
+
+async function saveClient() {
+  const id = document.getElementById('c-id').value;
+  const mods = Array.from(document.querySelectorAll('#clientModal input.c-kpi-mod:checked')).map(cb => cb.value);
+  const body = {
+    name: document.getElementById('c-name').value,
+    logo_text: document.getElementById('c-logo').value || 'RC',
+    color: document.getElementById('c-color').value,
+    description: document.getElementById('c-desc').value,
+    kpi_modules: mods
+  };
+  if (!body.name) return showToast('⚠️ El nombre es requerido', 'warn');
+  const url = id ? `/api/clients/${id}` : '/api/clients/';
+  const method = id ? 'PUT' : 'POST';
+  const res = await apiFetch(url, { method, body: JSON.stringify(body) });
+  if (res.ok) {
+    closeModal('clientModal');
+    loadClients();
+    loadClientSelector();
+    showToast(id ? '✅ Cliente actualizado' : '✅ Cliente creado');
+  } else {
+    showToast('❌ Error al guardar cliente', 'error');
+  }
+}
+
+async function deleteClient(id, name) {
+  if (!confirm(`¿Eliminar al cliente "${name}" y todos sus datos?`)) return;
+  const res = await apiFetch(`/api/clients/${id}`, { method: 'DELETE' });
+  if (res.ok || res.status === 204) {
+    loadClients(); loadClientSelector();
+    showToast('🗑️ Cliente eliminado');
+  }
+}
+
+// ── Reports page ─────────────────────────────────────
+async function loadReports() {
+  if (!currentClientId) {
+    document.getElementById('reportsTableBody').innerHTML =
+      '<tr><td colspan="11" style="text-align:center;padding:32px;color:#94a3b8;">Selecciona un cliente.</td></tr>';
+    return;
+  }
+  const clientObj = getCurrentClientObj();
+  const mods = clientObj ? (clientObj.kpi_modules || []) : [];
+  
+  // Render dynamic table header
+  const thead = document.getElementById('reportsTableHead');
+  if (mods.includes('petopia_vol')) {
+    thead.innerHTML = `
+      <tr>
+        <th>Mes</th>
+        <th>Yeastar (Agentes)</th>
+        <th>Botmaker (Bot)</th>
+        <th>Total Interacciones</th>
+        <th>Notas</th>
+        <th>Acciones</th>
+      </tr>
+    `;
+  } else {
+    thead.innerHTML = `
+      <tr>
+        <th>Mes</th><th>Chats</th><th>Leads</th><th>Ventas</th>
+        <th>% Cierre</th><th>Conf. Citas</th><th>Soporte</th>
+        <th>CSAT</th><th>Llamadas</th><th>KIDOZ%</th><th>Acciones</th>
+      </tr>
+    `;
+  }
+
+  const year = document.getElementById('reportYearFilter').value;
+  const url = `/api/clients/${currentClientId}/reports` + (year ? `?year=${year}` : '');
+  const res = await apiFetch(url);
+  if (!res.ok) return;
+  const reports = await res.json();
+  const tbody = document.getElementById('reportsTableBody');
+  if (!reports.length) {
+    tbody.innerHTML = `<tr><td colspan="${mods.includes('petopia_vol') ? 6 : 11}"><div class="empty-state"><i class="fas fa-table"></i><h3>No hay reportes</h3><p>Agrega el primer mes con el botón de arriba.</p></div></td></tr>`;
+    return;
+  }
+
+  if (mods.includes('petopia_vol')) {
+    tbody.innerHTML = reports.map(r => {
+      const yVal = r.extra_data?.yeastar_calls || r.total_calls || 0;
+      const bVal = r.extra_data?.botmaker_interactions || 0;
+      return `
+        <tr>
+          <td><strong>${r.month_name} ${r.year}</strong></td>
+          <td>${yVal.toLocaleString('es')}</td>
+          <td>${bVal.toLocaleString('es')}</td>
+          <td><strong>${(yVal + bVal).toLocaleString('es')}</strong></td>
+          <td>${r.notes || '<span style="color:#94a3b8">—</span>'}</td>
+          <td>
+            <div class="row-actions">
+              <button class="btn btn-sm btn-secondary btn-icon" onclick="editReport(${JSON.stringify(r).replace(/"/g,'&quot;')})"><i class="fas fa-edit"></i></button>
+              <button class="btn btn-sm btn-danger btn-icon" onclick="deleteReport(${r.id})"><i class="fas fa-trash"></i></button>
+            </div>
+          </td>
+        </tr>
+      `;
+    }).join('');
+  } else {
+    tbody.innerHTML = reports.map(r => `
+      <tr>
+        <td><strong>${r.month_name} ${r.year}</strong></td>
+        <td>${r.chats.toLocaleString('es')}</td>
+        <td>${r.leads.toLocaleString('es')}</td>
+        <td>${r.sales.toLocaleString('es')}</td>
+        <td>${r.closing_rate}%</td>
+        <td>${r.appointment_confirmations.toLocaleString('es')}</td>
+        <td>${r.support.toLocaleString('es')}</td>
+        <td>${r.csat}</td>
+        <td>${r.total_calls.toLocaleString('es')}</td>
+        <td>${r.kidoz_optimal_pct}%</td>
+        <td>
+          <div class="row-actions">
+            <button class="btn btn-sm btn-secondary btn-icon" onclick="editReport(${JSON.stringify(r).replace(/"/g,'&quot;')})"><i class="fas fa-edit"></i></button>
+            <button class="btn btn-sm btn-danger btn-icon" onclick="deleteReport(${r.id})"><i class="fas fa-trash"></i></button>
+          </div>
+        </td>
+      </tr>
+    `).join('');
+  }
+}
+
+document.getElementById('reportYearFilter').addEventListener('change', loadReports);
+
+function openReportModal() {
+  document.getElementById('r-id').value = '';
+  document.getElementById('r-year').value = new Date().getFullYear();
+  document.getElementById('r-month').value = new Date().getMonth() + 1;
+  ['r-chats','r-leads','r-sales','r-confirmations','r-support','r-total-calls',
+   'r-answered','r-inbound','r-inbound-ans','r-outbound','r-outbound-ans',
+   'r-kid-opt-c','r-kid-opt-ch','r-kid-acc-c','r-kid-acc-ch','r-kid-def-c',
+   'r-kid-def-ch','r-kid-total','r-pet-yeastar','r-pet-botmaker'].forEach(id => {
+     const el = document.getElementById(id);
+     if (el) el.value = 0;
+   });
+  document.getElementById('r-csat').value = 4.5;
+  document.getElementById('r-contact-rate').value = 0;
+  document.getElementById('r-kid-pct').value = 0;
+  document.getElementById('r-notes').value = '';
+
+  // Show/Hide sections depending on current client's kpi_modules
+  const clientObj = getCurrentClientObj();
+  const mods = clientObj ? (clientObj.kpi_modules || []) : [];
+  document.getElementById('sec-mod-chat_sales').style.display = mods.includes('chat_sales') ? 'block' : 'none';
+  document.getElementById('sec-mod-calls').style.display = mods.includes('calls') ? 'block' : 'none';
+  document.getElementById('sec-mod-quality_kidoz').style.display = mods.includes('quality_kidoz') ? 'block' : 'none';
+  document.getElementById('sec-mod-petopia_vol').style.display = mods.includes('petopia_vol') ? 'block' : 'none';
+
+  document.getElementById('reportModalTitle').textContent = '➕ Agregar mes';
+  openModal('reportModal');
+}
+
+function editReport(r) {
+  openReportModal();
+  document.getElementById('r-id').value = r.id;
+  document.getElementById('r-year').value = r.year;
+  document.getElementById('r-month').value = r.month;
+  document.getElementById('r-chats').value = r.chats;
+  document.getElementById('r-leads').value = r.leads;
+  document.getElementById('r-sales').value = r.sales;
+  document.getElementById('r-confirmations').value = r.appointment_confirmations;
+  document.getElementById('r-support').value = r.support;
+  document.getElementById('r-csat').value = r.csat;
+  document.getElementById('r-total-calls').value = r.total_calls;
+  document.getElementById('r-answered').value = r.answered_calls;
+  document.getElementById('r-contact-rate').value = r.contact_rate;
+  document.getElementById('r-inbound').value = r.inbound_calls;
+  document.getElementById('r-inbound-ans').value = r.inbound_answered;
+  document.getElementById('r-outbound').value = r.outbound_calls;
+  document.getElementById('r-outbound-ans').value = r.outbound_answered;
+  document.getElementById('r-kid-opt-c').value = r.kidoz_optimal_calls;
+  document.getElementById('r-kid-opt-ch').value = r.kidoz_optimal_chats;
+  document.getElementById('r-kid-acc-c').value = r.kidoz_acceptable_calls;
+  document.getElementById('r-kid-acc-ch').value = r.kidoz_acceptable_chats;
+  document.getElementById('r-kid-def-c').value = r.kidoz_deficient_calls;
+  document.getElementById('r-kid-def-ch').value = r.kidoz_deficient_chats;
+  document.getElementById('r-kid-total').value = r.kidoz_total_evaluations;
+  document.getElementById('r-kid-pct').value = r.kidoz_optimal_pct;
+  document.getElementById('r-pet-yeastar').value = r.extra_data?.yeastar_calls || r.total_calls || 0;
+  document.getElementById('r-pet-botmaker').value = r.extra_data?.botmaker_interactions || 0;
+  document.getElementById('r-notes').value = r.notes || '';
+  document.getElementById('reportModalTitle').textContent = '✏️ Editar mes';
+}
+
+function getReportBody() {
+  const yeastarVal = +document.getElementById('r-pet-yeastar').value;
+  const botmakerVal = +document.getElementById('r-pet-botmaker').value;
+  return {
+    year: +document.getElementById('r-year').value,
+    month: +document.getElementById('r-month').value,
+    chats: +document.getElementById('r-chats').value,
+    leads: +document.getElementById('r-leads').value,
+    sales: +document.getElementById('r-sales').value,
+    appointment_confirmations: +document.getElementById('r-confirmations').value,
+    support: +document.getElementById('r-support').value,
+    csat: +document.getElementById('r-csat').value,
+    total_calls: +document.getElementById('r-total-calls').value || yeastarVal,
+    answered_calls: +document.getElementById('r-answered').value,
+    contact_rate: +document.getElementById('r-contact-rate').value,
+    inbound_calls: +document.getElementById('r-inbound').value,
+    inbound_answered: +document.getElementById('r-inbound-ans').value,
+    outbound_calls: +document.getElementById('r-outbound').value,
+    outbound_answered: +document.getElementById('r-outbound-ans').value,
+    kidoz_optimal_calls: +document.getElementById('r-kid-opt-c').value,
+    kidoz_optimal_chats: +document.getElementById('r-kid-opt-ch').value,
+    kidoz_acceptable_calls: +document.getElementById('r-kid-acc-c').value,
+    kidoz_acceptable_chats: +document.getElementById('r-kid-acc-ch').value,
+    kidoz_deficient_calls: +document.getElementById('r-kid-def-c').value,
+    kidoz_deficient_chats: +document.getElementById('r-kid-def-ch').value,
+    kidoz_total_evaluations: +document.getElementById('r-kid-total').value,
+    kidoz_optimal_pct: +document.getElementById('r-kid-pct').value,
+    extra_data: {
+      yeastar_calls: yeastarVal,
+      botmaker_interactions: botmakerVal,
+      total_interactions: yeastarVal + botmakerVal
+    },
+    notes: document.getElementById('r-notes').value || null
+  };
+}
+
+async function saveReport() {
+  if (!currentClientId) return showToast('⚠️ Selecciona un cliente primero', 'warn');
+  const id = document.getElementById('r-id').value;
+  const body = getReportBody();
+  const url = id
+    ? `/api/clients/${currentClientId}/reports/${id}`
+    : `/api/clients/${currentClientId}/reports`;
+  const method = id ? 'PUT' : 'POST';
+  const res = await apiFetch(url, { method, body: JSON.stringify(body) });
+  if (res.ok || res.status === 201) {
+    closeModal('reportModal');
+    loadReports();
+    loadDashboard();
+    showToast(id ? '✅ Reporte actualizado' : '✅ Mes agregado correctamente');
+  } else {
+    const err = await res.json();
+    showToast('❌ ' + (err.detail || 'Error al guardar'), 'error');
+  }
+}
+
+async function deleteReport(id) {
+  if (!confirm('¿Eliminar este reporte mensual?')) return;
+  const res = await apiFetch(`/api/clients/${currentClientId}/reports/${id}`, { method: 'DELETE' });
+  if (res.ok || res.status === 204) { loadReports(); loadDashboard(); showToast('🗑️ Reporte eliminado'); }
+}
+
+// ── Links page ───────────────────────────────────────
+async function loadLinks() {
+  if (!currentClientId) {
+    document.getElementById('linksContainer').innerHTML =
+      '<div class="empty-state"><i class="fas fa-link"></i><h3>Selecciona un cliente</h3></div>';
+    return;
+  }
+  const res = await apiFetch(`/api/clients/${currentClientId}/public-views`);
+  if (!res.ok) return;
+  const views = await res.json();
+  const container = document.getElementById('linksContainer');
+  if (!views.length) {
+    container.innerHTML = '<div class="empty-state"><i class="fas fa-link"></i><h3>No hay links creados</h3><p>Crea el primero con el botón de arriba.</p></div>';
+    return;
+  }
+  container.innerHTML = views.map(v => `
+    <div class="link-card">
+      <div style="display:flex;justify-content:space-between;align-items:flex-start;">
+        <div>
+          <strong>${v.title}</strong>
+          ${v.description ? `<p style="color:#64748b;font-size:0.8rem;margin-top:4px;">${v.description}</p>` : ''}
+          <div style="display:flex;gap:8px;margin-top:8px;flex-wrap:wrap;">
+            <span class="badge ${v.is_active ? 'badge-green' : 'badge-gray'}">${v.is_active ? '● Activo' : '○ Inactivo'}</span>
+            ${v.has_password ? '<span class="badge badge-yellow">🔒 Con contraseña</span>' : '<span class="badge badge-gray">🔓 Sin contraseña</span>'}
+            ${v.expires_at ? `<span class="badge badge-yellow">⏰ Expira: ${new Date(v.expires_at).toLocaleDateString('es')}</span>` : ''}
+            <span class="badge badge-gray"><i class="fas fa-eye"></i> ${v.views_count} vistas</span>
+          </div>
+        </div>
+        <div class="row-actions">
+          <button class="btn btn-sm btn-danger btn-icon" onclick="deleteLink(${v.id})" title="Eliminar">
+            <i class="fas fa-trash"></i>
+          </button>
+        </div>
+      </div>
+      <div class="link-url" id="link-url-${v.id}">${window.location.origin}/view/${v.token}</div>
+      <div style="display:flex;gap:10px;flex-wrap:wrap;">
+        <button class="copy-btn" onclick="copyLink('${v.token}')"><i class="fas fa-copy"></i> Copiar link</button>
+        <button class="copy-btn" style="background:#3b82f6;" onclick="window.open('/view/${v.token}','_blank')">
+          <i class="fas fa-external-link-alt"></i> Previsualizar
+        </button>
+        <button class="copy-btn" style="background:#8b5cf6;" onclick="window.open('/slides/${currentClientId}?token=${v.token}','_blank')">
+          <i class="fas fa-tv"></i> Ver en slides
+        </button>
+      </div>
+      <div style="font-size:0.72rem;color:#64748b;margin-top:8px;">
+        Secciones visibles: ${v.visible_sections.join(', ')}
+      </div>
+    </div>
+  `).join('');
+}
+
+function openLinkModal() {
+  if (!currentClientId) return showToast('⚠️ Selecciona un cliente primero', 'warn');
+  document.getElementById('lk-title').value = '';
+  document.getElementById('lk-desc').value = '';
+  document.getElementById('lk-year').value = '';
+  document.getElementById('lk-from').value = '';
+  document.getElementById('lk-to').value = '';
+  document.getElementById('lk-password').value = '';
+  document.getElementById('lk-expires').value = '';
+  // Checkboxes default
+  document.querySelectorAll('#linkModal input[type=checkbox]').forEach(cb => {
+    cb.checked = ['general','datosmes','chats','llamadas','equipo','calidad'].includes(cb.value);
+  });
+  openModal('linkModal');
+}
+
+async function saveLink() {
+  const title = document.getElementById('lk-title').value;
+  if (!title) return showToast('⚠️ El título es requerido', 'warn');
+  const sections = Array.from(document.querySelectorAll('#linkModal input[type=checkbox]:checked')).map(cb => cb.value);
+  const body = {
+    title,
+    description: document.getElementById('lk-desc').value || null,
+    visible_sections: sections,
+    show_year: +document.getElementById('lk-year').value || null,
+    show_months_from: +document.getElementById('lk-from').value || null,
+    show_months_to: +document.getElementById('lk-to').value || null,
+    password: document.getElementById('lk-password').value || null,
+    expires_at: document.getElementById('lk-expires').value || null
+  };
+  const res = await apiFetch(`/api/clients/${currentClientId}/public-views`, {
+    method: 'POST', body: JSON.stringify(body)
+  });
+  if (res.ok || res.status === 201) {
+    closeModal('linkModal');
+    loadLinks();
+    showToast('🔗 Link público creado y listo para compartir');
+  } else {
+    showToast('❌ Error al crear el link', 'error');
+  }
+}
+
+async function deleteLink(id) {
+  if (!confirm('¿Eliminar este link público?')) return;
+  const res = await apiFetch(`/api/clients/${currentClientId}/public-views/${id}`, { method: 'DELETE' });
+  if (res.ok || res.status === 204) { loadLinks(); showToast('🗑️ Link eliminado'); }
+}
+
+function copyLink(token) {
+  navigator.clipboard.writeText(window.location.origin + '/view/' + token);
+  showToast('📋 Link copiado al portapapeles');
+}
+
+// ── Motor KPI Dinámico (Fase 04) ──────────────────────
+function openKpiModal(editId = null) {
+  document.getElementById('kpi-edit-id').value = editId || '';
+  if (!editId) {
+    document.getElementById('kpi-code').value = '';
+    document.getElementById('kpi-name').value = '';
+    document.getElementById('kpi-source').value = 'botmaker';
+    document.getElementById('kpi-report-type').value = 'users';
+    document.getElementById('kpi-target').value = '';
+    document.getElementById('kpi-formula-type').value = 'ratio';
+    document.getElementById('kpi-inputs').value = 'answered, total';
+    document.getElementById('kpi-direction').value = 'higher_is_better';
+    document.getElementById('kpi-unit').value = 'percentage';
+    document.getElementById('kpi-desc').value = '';
+    document.getElementById('kpiModalTitle').innerHTML = '<i class="fas fa-plus"></i> Nuevo KPI Dinámico';
+  }
+  openModal('kpiModal');
+}
+
+async function saveKpiConfig(e) {
+  e.preventDefault();
+  if (!currentClientId) return showToast('⚠️ Selecciona un cliente primero.', 'warn');
+
+  const editId = document.getElementById('kpi-edit-id').value;
+  const targetVal = document.getElementById('kpi-target').value;
+  const inputsStr = document.getElementById('kpi-inputs').value;
+
+  const payload = {
+    kpi_code: document.getElementById('kpi-code').value,
+    kpi_name: document.getElementById('kpi-name').value,
+    source_code: document.getElementById('kpi-source').value,
+    report_type: document.getElementById('kpi-report-type').value,
+    target_value: targetVal !== '' ? parseFloat(targetVal) : null,
+    formula_type: document.getElementById('kpi-formula-type').value,
+    input_metrics: inputsStr.split(',').map(s => s.trim()).filter(Boolean),
+    direction: document.getElementById('kpi-direction').value,
+    unit: document.getElementById('kpi-unit').value,
+    description: document.getElementById('kpi-desc').value
+  };
+
+  let url = `/api/admin/kpis/clients/${currentClientId}`;
+  let method = 'POST';
+  if (editId) {
+    url = `/api/admin/kpis/${editId}`;
+    method = 'PUT';
+  }
+
+  const res = await apiFetch(url, {
+    method: method,
+    body: JSON.stringify(payload)
+  });
+
+  if (res.ok || res.status === 201) {
+    showToast(editId ? '✅ KPI actualizado' : '✅ KPI creado correctamente');
+    closeModal('kpiModal');
+    loadKpiConfigs();
+  } else {
+    const err = await res.json();
+    showToast('❌ Error: ' + (err.detail || 'Error al guardar KPI'), 'error');
+  }
+}
+
+async function loadKpiConfigs() {
+  if (!currentClientId) return;
+  const res = await apiFetch(`/api/admin/kpis/clients/${currentClientId}`);
+  if (!res.ok) return;
+  const configs = await res.json();
+  const tbody = document.getElementById('kpiConfigsTableBody');
+
+  if (!configs.length) {
+    tbody.innerHTML = '<tr><td colspan="8" style="text-align:center;padding:24px;color:#94a3b8;">No se han configurado KPIs para este cliente. Haz clic en "Nuevo KPI".</td></tr>';
+    return;
+  }
+
+  tbody.innerHTML = configs.map(c => `
+    <tr>
+      <td><strong>${c.kpi_name}</strong><br><code style="font-size:0.75rem;color:#64748b;">${c.kpi_code}</code></td>
+      <td><span class="badge badge-gray">${c.source_code || 'manual'}</span><br><span style="font-size:0.75rem;color:#64748b;">${c.report_type || 'Genérico'}</span></td>
+      <td><code>${c.formula_type}: ${c.formula_expression}</code></td>
+      <td><strong>${c.target_value !== null ? c.target_value + ' ' + (c.unit === 'percentage' ? '%' : '') : '<em style="color:#94a3b8;">NO_TARGET</em>'}</strong></td>
+      <td><span style="font-size:0.75rem;">${c.direction}</span></td>
+      <td><span class="badge badge-gray">${c.unit}</span></td>
+      <td><span class="badge ${c.is_active ? 'badge-green' : 'badge-gray'}">${c.is_active ? 'Activo' : 'Inactivo'}</span></td>
+      <td>
+        <button class="btn btn-sm btn-secondary btn-icon" onclick="editKpiConfig(${c.id})" title="Editar"><i class="fas fa-edit"></i></button>
+        <button class="btn btn-sm btn-secondary btn-icon" onclick="deleteKpiConfig(${c.id})" title="Desactivar"><i class="fas fa-trash"></i></button>
+      </td>
+    </tr>
+  `).join('');
+}
+
+async function calculateKpisForClient() {
+  if (!currentClientId) return showToast('⚠️ Selecciona un cliente.', 'warn');
+  const period = document.getElementById('kpiCalcPeriod').value || '2026-08';
+
+  showToast(`🔄 Evaluando KPIs para período ${period}...`);
+  const res = await apiFetch(`/api/admin/kpis/calculate?client_id=${currentClientId}&period=${period}`, { method: 'POST' });
+  if (!res.ok) {
+    const err = await res.json();
+    return showToast('❌ Error: ' + (err.detail || 'Error evaluando KPIs'), 'error');
+  }
+  const results = await res.json();
+  showToast(`✅ ${results.length} KPIs evaluados determinísticamente`);
+  loadKpiResults();
+}
+
+async function loadKpiResults() {
+  if (!currentClientId) return;
+  const period = document.getElementById('kpiCalcPeriod').value || '2026-08';
+  const res = await apiFetch(`/api/admin/kpis/results?client_id=${currentClientId}&period=${period}`);
+  if (!res.ok) return;
+  const results = await res.json();
+  const tbody = document.getElementById('kpiResultsTableBody');
+
+  if (!results.length) {
+    tbody.innerHTML = '<tr><td colspan="8" style="text-align:center;padding:24px;color:#94a3b8;">Sin resultados calculados para el período ' + period + '. Haz clic en "Calcular / Evaluar".</td></tr>';
+    return;
+  }
+
+  tbody.innerHTML = results.map(r => {
+    let badgeClass = 'badge-gray';
+    if (r.status_color === 'green') badgeClass = 'badge-green';
+    else if (r.status_color === 'yellow') badgeClass = 'badge-yellow';
+    else if (r.status_color === 'red') badgeClass = 'badge-red';
+
+    const valStr = r.value !== null ? r.value.toLocaleString('es') : '<em style="color:#94a3b8;">NOT_AVAILABLE</em>';
+    const targetStr = r.target_value !== null ? r.target_value : '<em style="color:#94a3b8;">NO_TARGET</em>';
+
+    return `
+      <tr>
+        <td><strong>${r.period}</strong></td>
+        <td><code>${r.kpi_code}</code></td>
+        <td><span class="badge badge-gray">${r.source_code}</span></td>
+        <td><strong style="font-size:1.05rem;">${valStr}</strong></td>
+        <td>${targetStr}</td>
+        <td><span class="badge ${badgeClass}">${r.status}</span></td>
+        <td><code style="font-size:0.75rem;">${r.formula_used || 'direct'}</code></td>
+        <td>
+          <button class="btn btn-sm btn-secondary btn-icon" onclick="viewKpiTraceability(${r.id})" title="Ver Trazabilidad Completa">
+            <i class="fas fa-microscope"></i>
+          </button>
+        </td>
+      </tr>
+    `;
+  }).join('');
+}
+
+async function viewKpiTraceability(resultId) {
+  openModal('kpiTraceabilityModal');
+  const container = document.getElementById('kpiTraceabilityModalContent');
+  container.innerHTML = '<div style="text-align:center;padding:24px;color:#94a3b8;"><i class="fas fa-spinner fa-spin fa-2x"></i><p style="margin-top:8px;">Cargando trazabilidad de resultado...</p></div>';
+
+  const res = await apiFetch(`/api/admin/kpis/results/${resultId}/traceability`);
+  if (!res.ok) {
+    container.innerHTML = '<div style="color:#dc2626;padding:16px;">Error al obtener trazabilidad.</div>';
+    return;
+  }
+  const t = await res.json();
+
+  let inputsHTML = Object.entries(t.input_values || {}).map(([k, v]) => `
+    <div style="display:flex;justify-content:space-between;font-size:0.8rem;padding:4px 0;border-bottom:1px solid #e2e8f0;">
+      <span>Métrica <code>${k}</code>:</span><strong>${v !== null ? v : 'NULL'}</strong>
+    </div>
+  `).join('');
+
+  container.innerHTML = `
+    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:12px;margin-bottom:16px;background:#f8fafc;padding:16px;border-radius:10px;">
+      <div><span style="font-size:0.75rem;color:#64748b;">Cliente / Período:</span><br><strong>${t.client_name} (${t.period})</strong></div>
+      <div><span style="font-size:0.75rem;color:#64748b;">KPI Code:</span><br><code>${t.kpi_code}</code></div>
+      <div><span style="font-size:0.75rem;color:#64748b;">Valor vs Meta:</span><br><strong>${t.value !== null ? t.value : 'NULL'}</strong> / target: <strong>${t.target_value !== null ? t.target_value : 'NO_TARGET'}</strong></div>
+      <div><span style="font-size:0.75rem;color:#64748b;">Estado Evaluado:</span><br><span class="badge badge-${t.status_color}">${t.status}</span></div>
+    </div>
+
+    <h4 style="font-size:0.85rem;font-weight:700;margin-bottom:8px;">Fórmula y Métricas de Entrada:</h4>
+    <div style="background:#fff;padding:12px;border-radius:8px;border:1px solid #e2e8f0;margin-bottom:16px;font-size:0.85rem;">
+      <strong>Fórmula:</strong> <code>${t.formula_used}</code><br>
+      <div style="margin-top:8px;">${inputsHTML || 'Sin métricas de entrada registradas'}</div>
+    </div>
+
+    <h4 style="font-size:0.85rem;font-weight:700;margin-bottom:8px;">Trazabilidad Origen RAW:</h4>
+    <pre style="background:#0f172a;color:#38bdf8;padding:12px;border-radius:8px;font-size:0.75rem;overflow-x:auto;">${JSON.stringify(t.traceability_info, null, 2)}</pre>
+  `;
+}
+
+async function editKpiConfig(configId) {
+  const res = await apiFetch(`/api/admin/kpis/clients/${currentClientId}`);
+  if (!res.ok) return;
+  const configs = await res.json();
+  const cfg = configs.find(c => c.id == configId);
+  if (!cfg) return;
+
+  document.getElementById('kpi-edit-id').value = cfg.id;
+  document.getElementById('kpi-code').value = cfg.kpi_code;
+  document.getElementById('kpi-name').value = cfg.kpi_name;
+  document.getElementById('kpi-source').value = cfg.source_code || 'botmaker';
+  document.getElementById('kpi-report-type').value = cfg.report_type || '';
+  document.getElementById('kpi-target').value = cfg.target_value !== null ? cfg.target_value : '';
+  document.getElementById('kpi-formula-type').value = cfg.formula_type || 'ratio';
+  document.getElementById('kpi-inputs').value = (cfg.input_metrics || []).join(', ');
+  document.getElementById('kpi-direction').value = cfg.direction || 'higher_is_better';
+  document.getElementById('kpi-unit').value = cfg.unit || 'percentage';
+  document.getElementById('kpi-desc').value = cfg.description || '';
+
+  document.getElementById('kpiModalTitle').innerHTML = '<i class="fas fa-edit"></i> Editar KPI Dinámico';
+  openModal('kpiModal');
+}
+
+async function deleteKpiConfig(configId) {
+  if (!confirm('¿Deseas desactivar esta configuración de KPI?')) return;
+  const res = await apiFetch(`/api/admin/kpis/${configId}`, { method: 'DELETE' });
+  if (res.ok) {
+    showToast('🗑️ KPI desactivado');
+    loadKpiConfigs();
+  }
+}
+
+// ── Helpers ──────────────────────────────────────────
+
+function openModal(id) { document.getElementById(id).classList.add('open'); }
+function closeModal(id) { document.getElementById(id).classList.remove('open'); }
+
+let toastTimer;
+function showToast(msg, type = 'success') {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.style.background = type === 'error' ? '#dc2626' : type === 'warn' ? '#d97706' : '#1e2a3e';
+  t.classList.add('show');
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => t.classList.remove('show'), 3000);
+}
+
+// Cerrar modal al hacer clic fuera
+document.querySelectorAll('.modal-overlay').forEach(overlay => {
+  overlay.addEventListener('click', (e) => {
+    if (e.target === overlay) overlay.classList.remove('open');
+  });
+});
+
+// Tecla ESC
+document.addEventListener('keydown', (e) => {
+  if (e.key === 'Escape') document.querySelectorAll('.modal-overlay.open').forEach(m => m.classList.remove('open'));
+});
+
+// ── Init ─────────────────────────────────────────────
+(async function init() {
+  await loadClientSelector();
+  await loadDashboardGlobal();
+})();
+</script>
+</body>
+</html>
+

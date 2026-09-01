@@ -1,0 +1,25 @@
+# Python bytecode / cache
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Databases
+*.db
+*.sqlite3
+
+# Uploads
+uploads/raw/*
+!uploads/raw/.gitkeep
+
+# Environment & IDE
+.env
+.venv
+venv/
+ENV/
+.idea/
+.vscode/
+
+# Testing
+.pytest_cache/
+.coverage
+htmlcov/

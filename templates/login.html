@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Dashboard Reportes · Acceso</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+<style>
+  * { margin:0; padding:0; box-sizing:border-box; }
+  body {
+    font-family: 'Inter', sans-serif;
+    background: linear-gradient(145deg, #004d40 0%, #00796b 50%, #004d40 100%);
+    min-height: 100vh; display: flex; align-items: center; justify-content: center;
+  }
+  .card {
+    background: white; border-radius: 28px; padding: 48px 40px;
+    width: 100%; max-width: 420px; box-shadow: 0 24px 60px rgba(0,0,0,0.25);
+    text-align: center;
+  }
+  .logo { font-size: 3rem; color: #009688; margin-bottom: 16px; }
+  h1 { font-size: 1.8rem; font-weight: 800; color: #1e2a3e; }
+  .subtitle { color: #64748b; font-size: 0.9rem; margin-top: 6px; margin-bottom: 36px; }
+  .field { margin-bottom: 20px; text-align: left; }
+  label { font-size: 0.8rem; font-weight: 600; color: #475569; display: block; margin-bottom: 6px; }
+  input {
+    width: 100%; padding: 13px 16px; border: 2px solid #e2e8f0;
+    border-radius: 12px; font-size: 1rem; font-family: 'Inter', sans-serif;
+    transition: border-color 0.2s; outline: none;
+  }
+  input:focus { border-color: #009688; }
+  .btn {
+    width: 100%; padding: 14px; background: linear-gradient(135deg, #009688, #00796b);
+    color: white; border: none; border-radius: 14px; font-size: 1rem;
+    font-weight: 700; cursor: pointer; transition: transform 0.2s, box-shadow 0.2s;
+    font-family: 'Inter', sans-serif;
+  }
+  .btn:hover { transform: translateY(-1px); box-shadow: 0 8px 20px rgba(0,150,136,0.4); }
+  .btn:active { transform: translateY(0); }
+  .error {
+    background: #fef2f2; color: #dc2626; border-radius: 10px;
+    padding: 12px 16px; font-size: 0.85rem; margin-bottom: 20px; display: none;
+  }
+  .loading { opacity: 0.7; pointer-events: none; }
+</style>
+</head>
+<body>
+<div class="card">
+  <div class="logo"><i class="fas fa-chart-line"></i></div>
+  <h1>Dashboard Reportes</h1>
+  <p class="subtitle">Panel de gestión de informes para clientes</p>
+
+  <div class="error" id="errorMsg">
+    <i class="fas fa-exclamation-circle"></i> <span id="errorText"></span>
+  </div>
+
+  <form id="loginForm">
+    <div class="field">
+      <label for="username"><i class="fas fa-user"></i> Usuario</label>
+      <input type="text" id="username" placeholder="admin" required autocomplete="username">
+    </div>
+    <div class="field">
+      <label for="password"><i class="fas fa-lock"></i> Contraseña</label>
+      <input type="password" id="password" placeholder="••••••••" required autocomplete="current-password">
+    </div>
+    <button type="submit" class="btn" id="loginBtn">
+      <i class="fas fa-sign-in-alt"></i> Ingresar
+    </button>
+  </form>
+</div>
+
+<script>
+  // Si ya hay token válido, ir directo al admin
+  if (localStorage.getItem('token')) {
+    window.location.href = '/admin';
+  }
+
+  document.getElementById('loginForm').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const btn = document.getElementById('loginBtn');
+    btn.classList.add('loading');
+    btn.textContent = 'Verificando...';
+
+    const resetBtn = () => {
+      btn.classList.remove('loading');
+      btn.innerHTML = '<i class="fas fa-sign-in-alt"></i> Ingresar';
+    };
+
+    const showError = (msg) => {
+      document.getElementById('errorMsg').style.display = 'block';
+      document.getElementById('errorText').textContent = msg;
+      resetBtn();
+    };
+
+    try {
+      // Header requerido por DevTunnels para evitar bloqueo anti-CSRF
+      const controller = new AbortController();
+      const timeout = setTimeout(() => controller.abort(), 10000); // 10s timeout
+
+      const res = await fetch('/api/auth/login', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'X-Tunnel-Skip-AntiCSRF': '1'
+        },
+        body: JSON.stringify({
+          username: document.getElementById('username').value,
+          password: document.getElementById('password').value
+        }),
+        signal: controller.signal
+      });
+      clearTimeout(timeout);
+
+      if (res.ok) {
+        const data = await res.json();
+        localStorage.setItem('token', data.access_token);
+        window.location.href = '/admin';
+      } else {
+        let msg = 'Credenciales incorrectas';
+        try { const err = await res.json(); msg = err.detail || msg; } catch(_) {}
+        showError(msg);
+      }
+    } catch (err) {
+      if (err.name === 'AbortError') {
+        showError('Tiempo de espera agotado. Verifica que el servidor esté activo.');
+      } else {
+        showError('Error de conexión: ' + err.message);
+      }
+    }
+  });
+</script>
+</body>
+</html>
