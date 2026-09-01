@@ -59,16 +59,17 @@ app.include_router(analysis.router)
 # ── Rutas de páginas HTML ──────────────────────────────────────────────────
 @app.get("/")
 def home(request: Request):
-    return templates.TemplateResponse("login.html", {"request": request})
+    return templates.TemplateResponse(request=request, name="login.html")
 
 @app.get("/admin")
 def admin_page(request: Request):
-    return templates.TemplateResponse("admin.html", {"request": request})
+    return templates.TemplateResponse(request=request, name="admin.html")
 
 @app.get("/slides/{client_id}")
 def slides_page(request: Request, client_id: int):
-    return templates.TemplateResponse("slides.html", {"request": request, "client_id": client_id})
+    return templates.TemplateResponse(request=request, name="slides.html", context={"client_id": client_id})
 
 @app.get("/view/{token}")
 def public_view_page(request: Request, token: str):
-    return templates.TemplateResponse("public.html", {"request": request, "token": token})
+    return templates.TemplateResponse(request=request, name="public.html", context={"token": token})
+

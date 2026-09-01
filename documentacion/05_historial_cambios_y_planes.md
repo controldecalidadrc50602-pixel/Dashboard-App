@@ -2,7 +2,13 @@
 
 ## 📋 Registro de Cambios Realizados (Changelog)
 
+### Versión 1.7.5 (2026-09-01) - FASE 05B: Auditoría y Corrección del Despliegue Vercel
+- **Corrección de Empaquetado Serverless:** Inyección de `includeFiles` en `vercel.json` para incluir plantillas HTML y estáticos en la función Lambda.
+- **Firma de Plantillas Homologada:** Compatibilidad completa con Starlette 0.36+ y FastAPI 0.111+ en `app/main.py`.
+- **Diagnóstico de Persistencia:** SQLite verificado operando sobre `/tmp/dashboard.db` (efímero).
+
 ### Versión 1.7.0 (2026-09-01) - FASE 05: Motor de Análisis Determinístico RC506 y Capa de Insights Ejecutivos
+
 - **Capa Semántica & Motor de Análisis RC506:** Transformación determinística de KPIs evaluados en observaciones e insights explicables sin IA ni causalidad falsa.
 - **Catálogo Declarativo de Reglas:** Reglas declarativas para metas, comparativas MoM, tendencias históricas en 3+ períodos y calidad de datos.
 - **Entidad `AnalysisInsight`:** Persistencia relacional de observaciones con deltas absolutos/porcentuales y severidades (`INFO`, `POSITIVE`, `WARNING`, `CRITICAL`, `NOT_AVAILABLE`).

@@ -29,7 +29,15 @@ Todos los cambios notables realizados en este proyecto serán documentados en es
 - `app/auth.py`: Refuerzo de seguridad JWT e inspección de `SECRET_KEY`.
 - `app/routers/auth.py`, `clients.py`, `reports.py`, `public.py`: Integración de auditoría en operaciones clave.
 
+## [FASE 05B] - 2026-09-01
+### Corregido
+- **Empaquetado Vercel Serverless (`vercel.json`):** Adición de `includeFiles` (`templates/**`, `static/**`) para empaquetado de HTML/assets en el bundle Lambda.
+- **Firma `TemplateResponse` (`app/main.py`):** Firma con argumentos nombrados `request=request, name=...` compatible con Starlette 0.36+/FastAPI 0.111+.
+- **Resolución `sys.path` (`api/index.py`):** Inyección garantizada del directorio raíz del proyecto.
+- **Documentación de Despliegue (`documentacion/FASE_05B/`):** 6 documentos técnicos de auditoría, diagnóstico y límites de persistencia.
+
 ## [FASE 05] - 2026-09-01
+
 ### Añadido
 - **Motor de Análisis Determinístico RC506 (`app/services/analysis_engine/`):** Transformación de resultados KPI en observaciones explicables sin IA, LLMs ni causalidad falsa.
 - **Catálogo Declarativo de Reglas (`rules_registry.py`):** Reglas declarativas para `TARGET_COMPLIANCE`, `PERIOD_OVER_PERIOD`, `TREND`, `THRESHOLD_VARIATION`, `CONCENTRATION` y `DATA_QUALITY`.
