@@ -2412,9 +2412,23 @@ function openModal(id) {
   console.log('openModal EXECUTED for id:', id);
   const m = document.getElementById(id);
   if (m) {
+    m.style.cssText = `
+      display: flex !important;
+      position: fixed !important;
+      top: 0 !important;
+      left: 0 !important;
+      width: 100vw !important;
+      height: 100vh !important;
+      z-index: 99999 !important;
+      background: rgba(15, 23, 42, 0.65) !important;
+      backdrop-filter: blur(4px) !important;
+      align-items: center !important;
+      justify-content: center !important;
+      opacity: 1 !important;
+      visibility: visible !important;
+      pointer-events: auto !important;
+    `;
     m.classList.add('open');
-    m.style.display = 'flex';
-    console.log('Modal element found and set display flex for:', id, m);
   } else {
     console.error('Modal element NOT FOUND for id:', id);
   }
@@ -2422,8 +2436,8 @@ function openModal(id) {
 function closeModal(id) {
   const m = document.getElementById(id);
   if (m) {
+    m.style.cssText = 'display: none !important; opacity: 0 !important; visibility: hidden !important; pointer-events: none !important;';
     m.classList.remove('open');
-    m.style.display = 'none';
   }
 }
 
