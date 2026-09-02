@@ -1,13 +1,13 @@
 {
   "functions": {
-    "server.py": {
+    "api/index.py": {
       "includeFiles": "{templates/**,static/**,app/**}"
     }
   },
-  "rewrites": [
+  "routes": [
     {
-      "source": "/(.*)",
-      "destination": "/server"
+      "src": "/(.*)",
+      "dest": "/api/index"
     }
   ]
 }
