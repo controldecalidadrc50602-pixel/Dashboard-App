@@ -1667,18 +1667,35 @@ async function loadClients() {
 }
 
 function openClientModal(client = null) {
-  console.log('openClientModal EXECUTED', client);
-  const isEdit = client && typeof client === 'object' && client.id && !client.target;
-  document.getElementById('c-id').value = isEdit ? client.id : '';
-  document.getElementById('c-name').value = isEdit ? client.name : '';
-  document.getElementById('c-logo').value = isEdit ? (client.logo_text || '') : '';
-  document.getElementById('c-color').value = isEdit ? (client.color || '#009688') : '#009688';
-  document.getElementById('c-desc').value = isEdit ? (client.description || '') : '';
-  const mods = (isEdit && client.kpi_modules) ? client.kpi_modules : ['chat_sales','appointments','calls','quality_kidoz'];
-  document.querySelectorAll('#clientModal input.c-kpi-mod').forEach(cb => {
-    cb.checked = mods.includes(cb.value);
-  });
-  document.getElementById('clientModalTitle').innerHTML = isEdit ? '<i class="fas fa-building"></i> Editar cliente' : '<i class="fas fa-building"></i> ✨ Nuevo cliente';
+  try {
+    console.log('openClientModal STARTED', client);
+    const isEdit = client && typeof client === 'object' && client.id && !client.target;
+    
+    const fields = {
+      'c-id': isEdit ? client.id : '',
+      'c-name': isEdit ? client.name : '',
+      'c-logo': isEdit ? (client.logo_text || '') : '',
+      'c-color': isEdit ? (client.color || '#009688') : '#009688',
+      'c-desc': isEdit ? (client.description || '') : ''
+    };
+    
+    for (const [id, val] of Object.entries(fields)) {
+      const el = document.getElementById(id);
+      if (el) el.value = val;
+    }
+    
+    const mods = (isEdit && client.kpi_modules) ? client.kpi_modules : ['chat_sales','appointments','calls','quality_kidoz'];
+    document.querySelectorAll('#clientModal input.c-kpi-mod').forEach(cb => {
+      cb.checked = mods.includes(cb.value);
+    });
+    
+    const titleEl = document.getElementById('clientModalTitle');
+    if (titleEl) {
+      titleEl.innerHTML = isEdit ? '<i class="fas fa-building"></i> Editar cliente' : '<i class="fas fa-building"></i> ✨ Nuevo cliente';
+    }
+  } catch (err) {
+    console.error('Error in openClientModal prep:', err);
+  }
   openModal('clientModal');
 }
 
@@ -2406,8 +2423,18 @@ function openModal(id) {
   const m = document.getElementById(id);
   if (m) {
     m.classList.add('open');
-    m.style.display = 'flex';
-    console.log('Modal element found and set display flex for:', id, m, 'Rect:', m.getBoundingClientRect());
+    m.style.setProperty('display', 'flex', 'important');
+    m.style.setProperty('position', 'fixed', 'important');
+    m.style.setProperty('top', '0', 'important');
+    m.style.setProperty('left', '0', 'important');
+    m.style.setProperty('width', '100vw', 'important');
+    m.style.setProperty('height', '100vh', 'important');
+    m.style.setProperty('z-index', '999999', 'important');
+    m.style.setProperty('background', 'rgba(15, 23, 42, 0.75)', 'important');
+    m.style.setProperty('opacity', '1', 'important');
+    m.style.setProperty('visibility', 'visible', 'important');
+    m.style.setProperty('pointer-events', 'auto', 'important');
+    console.log('Modal element opened:', id, m, 'Rect:', m.getBoundingClientRect());
   } else {
     console.error('Modal element NOT FOUND for id:', id);
   }
@@ -2416,7 +2443,7 @@ function closeModal(id) {
   const m = document.getElementById(id);
   if (m) {
     m.classList.remove('open');
-    m.style.display = 'none';
+    m.style.setProperty('display', 'none', 'important');
   }
 }
 
