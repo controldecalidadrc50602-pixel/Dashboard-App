@@ -61,11 +61,19 @@ app.include_router(analysis.router)
 
 
 
-# Middleware de logging de peticiones para Vercel Serverless
+# Middleware de restauración de path original para Vercel Serverless
 @app.middleware("http")
-async def log_requests(request: Request, call_next):
-    print(f"PATH: {request.url.path}")
+async def fix_vercel_path_middleware(request: Request, call_next):
+    # Vercel provee la ruta original enviada por el cliente en 'x-matched-path' o 'x-forwarded-path'
+    matched_path = request.headers.get("x-matched-path") or request.headers.get("x-forwarded-path")
+    if matched_path and matched_path != request.scope.get("path"):
+        # Limpiar cualquier query string si viniera en el header
+        clean_path = matched_path.split("?")[0]
+        request.scope["path"] = clean_path
+    
+    print(f"METHOD: {request.method} | FINAL_PATH: {request.scope.get('path')}")
     return await call_next(request)
+
 
 
 # ── Rutas de páginas HTML ──────────────────────────────────────────────────
