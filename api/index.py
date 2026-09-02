@@ -9,6 +9,6 @@ if root_dir not in sys.path:
 
 from app.main import app
 
-# Mangum adapta FastAPI (ASGI) a Vercel/AWS Lambda HTTP Events resolviendo el 404 Not Found
-handler = Mangum(app, api_gateway_base_path="")
+# Configuración de Mangum sin api_gateway_base_path y con lifespan off
+handler = Mangum(app, lifespan="off")
 __all__ = ["app", "handler"]

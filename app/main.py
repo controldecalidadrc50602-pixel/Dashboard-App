@@ -61,8 +61,17 @@ app.include_router(analysis.router)
 
 
 
+# Middleware de logging de peticiones para Vercel Serverless
+@app.middleware("http")
+async def log_requests(request: Request, call_next):
+    print(f"PATH: {request.url.path}")
+    return await call_next(request)
+
+
 # ── Rutas de páginas HTML ──────────────────────────────────────────────────
 @app.get("/")
+@app.get("/api/index")
+@app.get("/api/index.py")
 def home(request: Request):
     return templates.TemplateResponse(request=request, name="login.html")
 
@@ -77,4 +86,5 @@ def slides_page(request: Request, client_id: int):
 @app.get("/view/{token}")
 def public_view_page(request: Request, token: str):
     return templates.TemplateResponse(request=request, name="public.html", context={"token": token})
+
 
