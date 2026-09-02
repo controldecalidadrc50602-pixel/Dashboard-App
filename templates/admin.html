@@ -471,7 +471,24 @@ select.client-select {
           </button>
         </div>
       </form>
+
+      <!-- Card: Sincronización Directa por API REST -->
+      <div style="margin-top:24px;border-top:1px solid #f1f5f9;padding-top:16px;">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
+          <h4 style="font-size:0.9rem;font-weight:700;color:#1e293b;"><i class="fas fa-plug"></i> Sincronización Directa por API (Botmaker & Yeastar Cloud)</h4>
+          <span class="badge badge-green"><i class="fas fa-signal"></i> Conectores Online</span>
+        </div>
+        <p style="color:#64748b;font-size:0.8rem;margin-bottom:12px;">
+          Sincroniza métricas en tiempo real directamente desde las APIs de Botmaker y Yeastar PBX Cloud sin necesidad de subir archivos exportados a mano.
+        </p>
+
+        <div style="display:flex;gap:12px;flex-wrap:wrap;">
+          <button class="btn btn-primary" onclick="syncBotmakerAPI()"><i class="fas fa-robot"></i> Sincronizar Botmaker API</button>
+          <button class="btn btn-primary" style="background:linear-gradient(135deg,#0284c7,#0369a1);" onclick="syncYeastarAPI()"><i class="fas fa-phone-alt"></i> Sincronizar Yeastar Cloud API</button>
+        </div>
+      </div>
     </div>
+
 
     <!-- Historial de Importaciones -->
     <div class="card">
@@ -2320,6 +2337,40 @@ async function viewInsightTraceability(insightId) {
     }, null, 2)}</pre>
   `;
 }
+
+// ── Sincronización Directa por API (Botmaker & Yeastar) ──
+async function syncBotmakerAPI() {
+  if (!currentClientId) return showToast('⚠️ Selecciona un cliente primero.', 'warn');
+  const period = document.getElementById('imp-period').value || '2026-08';
+
+  showToast(`🤖 Sincronizando datos en vivo desde Botmaker API para ${period}...`);
+  const res = await apiFetch(`/api/admin/connectors/botmaker/sync?client_id=${currentClientId}&period=${period}`, { method: 'POST' });
+
+  if (res.ok) {
+    const data = await res.json();
+    showToast(`✅ Sincronización Botmaker exitosa! Import ID: #${data.id}`);
+    loadImportsHistory();
+  } else {
+    showToast('❌ Error en sincronización Botmaker API', 'error');
+  }
+}
+
+async function syncYeastarAPI() {
+  if (!currentClientId) return showToast('⚠️ Selecciona un cliente primero.', 'warn');
+  const period = document.getElementById('imp-period').value || '2026-08';
+
+  showToast(`📞 Sincronizando datos en vivo desde Yeastar Cloud API para ${period}...`);
+  const res = await apiFetch(`/api/admin/connectors/yeastar/sync?client_id=${currentClientId}&period=${period}`, { method: 'POST' });
+
+  if (res.ok) {
+    const data = await res.json();
+    showToast(`✅ Sincronización Yeastar exitosa! Import ID: #${data.id}`);
+    loadImportsHistory();
+  } else {
+    showToast('❌ Error en sincronización Yeastar API', 'error');
+  }
+}
+
 
 
 // ── Helpers ──────────────────────────────────────────

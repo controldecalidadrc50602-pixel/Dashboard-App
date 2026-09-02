@@ -1,16 +1,25 @@
-FROM python:3.13-slim
+FROM python:3.12-slim
 
 WORKDIR /app
 
-# Instalar dependencias
+# Instalar dependencias de sistema requeridas para psycopg2 y utilidades de compilación
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    gcc \
+    libpq-dev \
+    curl \
+    && rm -rf /var/lib/apt/lists/*
+
 COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
-# Copiar código del proyecto
 COPY . .
 
-# Puerto de exposición
+# Crear directorios para cargas y base de datos local
+RUN mkdir -p uploads/raw
+
 EXPOSE 8000
 
-# Iniciar servidor Uvicorn
-CMD ["python", "run.py"]
+ENV PORT=8000
+ENV PYTHONUNBUFFERED=1
+
+CMD ["sh", "-c", "uvicorn app.main:app --host 0.0.0.0 --port ${PORT}"]
