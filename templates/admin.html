@@ -362,7 +362,7 @@ select.client-select {
     <div class="card">
       <div class="card-title" style="justify-content:space-between;">
         <span><i class="fas fa-building"></i> Clientes registrados</span>
-        <button class="btn btn-primary" onclick="openClientModal()"><i class="fas fa-plus"></i> Nuevo cliente</button>
+        <button class="btn btn-primary" onclick="console.log('CLICK OK'); openClientModal()"><i class="fas fa-plus"></i> Nuevo cliente</button>
       </div>
       <div class="table-wrap">
         <table>
@@ -1645,6 +1645,7 @@ async function loadClients() {
 }
 
 function openClientModal(client = null) {
+  console.log('openClientModal EXECUTED', client);
   const isEdit = client && typeof client === 'object' && client.id && !client.target;
   document.getElementById('c-id').value = isEdit ? client.id : '';
   document.getElementById('c-name').value = isEdit ? client.name : '';
@@ -2379,10 +2380,14 @@ async function syncYeastarAPI() {
 // ── Helpers ──────────────────────────────────────────
 
 function openModal(id) {
+  console.log('openModal EXECUTED for id:', id);
   const m = document.getElementById(id);
   if (m) {
     m.classList.add('open');
     m.style.display = 'flex';
+    console.log('Modal element found and set display flex for:', id, m);
+  } else {
+    console.error('Modal element NOT FOUND for id:', id);
   }
 }
 function closeModal(id) {
