@@ -10,23 +10,18 @@ load_dotenv()
 
 from app.database import Base, engine
 import app.models
-from app.routers import auth, clients, reports, public, dashboard_global, imports, kpis, analysis, connectors
+from app.routers import auth, clients, reports, public, dashboard_global, imports, kpis, analysis
 
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
-# Búsqueda robusta de directorios de plantillas y estáticos en Vercel Serverless
-candidate_template_dirs = [
-    os.path.join(BASE_DIR, "templates"),
-    os.path.join(os.getcwd(), "templates"),
-    "templates"
-]
-valid_template_dirs = [d for d in candidate_template_dirs if os.path.exists(d)]
-if not valid_template_dirs:
-    valid_template_dirs = [os.path.join(BASE_DIR, "templates")]
+# Búsqueda limpia y directa de plantillas
+templates_dir = os.path.join(BASE_DIR, "templates")
+if not os.path.exists(templates_dir):
+    templates_dir = "templates"
 
-templates = Jinja2Templates(directory=valid_template_dirs)
+templates = Jinja2Templates(directory=templates_dir)
 
-# Crear tablas protegidas contra fallos de inicio
+# Inicialización de base de datos
 try:
     Base.metadata.create_all(bind=engine)
 except Exception as e:
@@ -44,20 +39,12 @@ app.add_middleware(
     expose_headers=["*"],
 )
 
-# Montar archivos estáticos si existen
-candidate_static_dirs = [
-    os.path.join(BASE_DIR, "static"),
-    os.path.join(os.getcwd(), "static"),
-    "static"
-]
-for s_dir in candidate_static_dirs:
-    if os.path.exists(s_dir):
-        app.mount("/static", StaticFiles(directory=s_dir), name="static")
-        break
+# Montar estáticos si existen
+static_dir = os.path.join(BASE_DIR, "static")
+if os.path.exists(static_dir):
+    app.mount("/static", StaticFiles(directory=static_dir), name="static")
 
-
-
-# Registrar routers de API
+# Registrar routers principales
 app.include_router(auth.router)
 app.include_router(clients.router)
 app.include_router(reports.router)
@@ -66,7 +53,7 @@ app.include_router(dashboard_global.router)
 app.include_router(imports.router)
 app.include_router(kpis.router)
 app.include_router(analysis.router)
-app.include_router(connectors.router)
+
 
 
 
