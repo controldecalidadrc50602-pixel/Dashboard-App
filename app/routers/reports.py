@@ -4,7 +4,7 @@ from typing import List, Optional
 from app.database import get_db
 from app.models import MonthlyReport, Client
 from app.schemas import ReportCreate, ReportUpdate, ReportOut
-from app.routers.auth import get_current_admin
+from app.dependencies import get_current_user, get_username
 from app.audit import log_audit_action
 
 router = APIRouter(prefix="/api/clients", tags=["reports"])
@@ -26,7 +26,7 @@ def list_reports(
     client_id: int,
     year: Optional[int] = None,
     db: Session = Depends(get_db),
-    _=Depends(get_current_admin)
+    _=Depends(get_current_user)
 ):
     client = db.query(Client).filter(Client.id == client_id).first()
     if not client:
@@ -43,7 +43,7 @@ def create_report(
     client_id: int,
     body: ReportCreate,
     db: Session = Depends(get_db),
-    admin: dict = Depends(get_current_admin)
+    admin: dict = Depends(get_current_user)
 ):
     client = db.query(Client).filter(Client.id == client_id).first()
     if not client:
@@ -65,7 +65,7 @@ def create_report(
 
     log_audit_action(
         db,
-        username=admin.get("sub", "admin"),
+        username=get_username(admin),
         action="CREATE_REPORT",
         resource_type="report",
         resource_id=str(report.id),
@@ -78,7 +78,7 @@ def create_report(
 @router.put("/{client_id}/reports/{report_id}")
 def update_report(
     client_id: int, report_id: int, body: ReportUpdate,
-    db: Session = Depends(get_db), admin: dict = Depends(get_current_admin)
+    db: Session = Depends(get_db), admin: dict = Depends(get_current_user)
 ):
     report = db.query(MonthlyReport).filter(
         MonthlyReport.id == report_id,
@@ -96,7 +96,7 @@ def update_report(
 
     log_audit_action(
         db,
-        username=admin.get("sub", "admin"),
+        username=get_username(admin),
         action="UPDATE_REPORT",
         resource_type="report",
         resource_id=str(report_id),
@@ -109,7 +109,7 @@ def update_report(
 @router.delete("/{client_id}/reports/{report_id}", status_code=204)
 def delete_report(
     client_id: int, report_id: int,
-    db: Session = Depends(get_db), admin: dict = Depends(get_current_admin)
+    db: Session = Depends(get_db), admin: dict = Depends(get_current_user)
 ):
     report = db.query(MonthlyReport).filter(
         MonthlyReport.id == report_id,
@@ -124,7 +124,7 @@ def delete_report(
 
     log_audit_action(
         db,
-        username=admin.get("sub", "admin"),
+        username=get_username(admin),
         action="DELETE_REPORT",
         resource_type="report",
         resource_id=str(report_id),

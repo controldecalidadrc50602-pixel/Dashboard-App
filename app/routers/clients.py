@@ -2,16 +2,16 @@ from fastapi import APIRouter, HTTPException, Depends
 from sqlalchemy.orm import Session
 from typing import List
 from app.database import get_db
-from app.models import Client, KPIConfig
+from app.models import Client, KPIConfig, User
 from app.schemas import ClientCreate, ClientUpdate, ClientOut
-from app.routers.auth import get_current_admin
+from app.dependencies import require_superadmin, get_current_user
 from app.audit import log_audit_action
 
 router = APIRouter(prefix="/api/clients", tags=["clients"])
 
 
 @router.get("/", response_model=List[ClientOut])
-def list_clients(db: Session = Depends(get_db), _=Depends(get_current_admin)):
+def list_clients(db: Session = Depends(get_db), _=Depends(get_current_user)):
     return db.query(Client).order_by(Client.created_at.desc()).all()
 
 
@@ -19,7 +19,7 @@ def list_clients(db: Session = Depends(get_db), _=Depends(get_current_admin)):
 def create_client(
     body: ClientCreate,
     db: Session = Depends(get_db),
-    admin: dict = Depends(get_current_admin)
+    admin: User = Depends(require_superadmin)
 ):
     client = Client(**body.model_dump())
     db.add(client)
@@ -39,7 +39,7 @@ def create_client(
 
     log_audit_action(
         db,
-        username=admin.get("sub", "admin"),
+        username=admin.username,
         action="CREATE_CLIENT",
         resource_type="client",
         resource_id=str(client.id),
@@ -50,7 +50,7 @@ def create_client(
 
 
 @router.get("/{client_id}", response_model=ClientOut)
-def get_client(client_id: int, db: Session = Depends(get_db), _=Depends(get_current_admin)):
+def get_client(client_id: int, db: Session = Depends(get_db), _=Depends(get_current_user)):
     client = db.query(Client).filter(Client.id == client_id).first()
     if not client:
         raise HTTPException(status_code=404, detail="Cliente no encontrado")
@@ -62,7 +62,7 @@ def update_client(
     client_id: int,
     body: ClientUpdate,
     db: Session = Depends(get_db),
-    admin: dict = Depends(get_current_admin)
+    admin: User = Depends(require_superadmin)
 ):
     client = db.query(Client).filter(Client.id == client_id).first()
     if not client:
@@ -77,7 +77,7 @@ def update_client(
 
     log_audit_action(
         db,
-        username=admin.get("sub", "admin"),
+        username=admin.username,
         action="UPDATE_CLIENT",
         resource_type="client",
         resource_id=str(client.id),
@@ -91,7 +91,7 @@ def update_client(
 def delete_client(
     client_id: int,
     db: Session = Depends(get_db),
-    admin: dict = Depends(get_current_admin)
+    admin: User = Depends(require_superadmin)
 ):
     client = db.query(Client).filter(Client.id == client_id).first()
     if not client:
@@ -103,7 +103,7 @@ def delete_client(
 
     log_audit_action(
         db,
-        username=admin.get("sub", "admin"),
+        username=admin.username,
         action="DELETE_CLIENT",
         resource_type="client",
         resource_id=str(client_id),

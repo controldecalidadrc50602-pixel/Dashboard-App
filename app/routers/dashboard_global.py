@@ -9,7 +9,7 @@ from app.schemas import (
     DashboardGlobalResponse, GlobalSummaryOut, ClientStatusOut,
     GlobalMetricsOut, PreliminaryAlertOut, AuditLogOut
 )
-from app.routers.auth import get_current_admin
+from app.dependencies import get_current_user, get_username
 from app.audit import log_audit_action
 
 router = APIRouter(prefix="/api/admin", tags=["dashboard-global"])
@@ -22,12 +22,12 @@ MONTH_NAMES = ["", "Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio",
 def get_dashboard_global(
     request: Request,
     db: Session = Depends(get_db),
-    admin: dict = Depends(get_current_admin)
+    admin: dict = Depends(get_current_user)
 ):
     # Registrar auditoría de visualización del dashboard global
     log_audit_action(
         db,
-        username=admin.get("sub", "admin"),
+        username=get_username(admin),
         action="VIEW_DASHBOARD_GLOBAL",
         resource_type="dashboard",
         resource_id="global",

@@ -5,7 +5,7 @@ from typing import List, Optional
 from app.database import get_db
 from app.models import Client, AnalysisInsight, KPIResult, KPIConfig, ReportImport
 from app.schemas import AnalysisInsightOut
-from app.routers.auth import get_current_admin
+from app.dependencies import get_current_user, get_username
 from app.audit import log_audit_action
 
 from app.services.analysis_engine.analysis_service import run_rc506_analysis
@@ -20,14 +20,14 @@ def run_analysis_endpoint(
     period: str,
     request: Request,
     db: Session = Depends(get_db),
-    admin: dict = Depends(get_current_admin)
+    admin: dict = Depends(get_current_user)
 ):
     """Ejecuta el Motor de Análisis Determinístico RC506 para un cliente y período."""
     try:
         insights = run_rc506_analysis(db, client_id, period)
         log_audit_action(
             db,
-            username=admin.get("sub", "admin"),
+            username=get_username(admin),
             action="RUN_RC506_ANALYSIS",
             resource_type="analysis_insight",
             details={"client_id": client_id, "period": period, "insights_generated": len(insights)},
@@ -45,7 +45,7 @@ def get_client_insights(
     severity: Optional[str] = None,
     analysis_type: Optional[str] = None,
     db: Session = Depends(get_db),
-    _=Depends(get_current_admin)
+    _=Depends(get_current_user)
 ):
     """Consulta los insights determinísticos de un cliente con filtros opcionales."""
     q = db.query(AnalysisInsight).filter(AnalysisInsight.client_id == client_id)
@@ -61,7 +61,7 @@ def get_client_insights(
 
 
 @router.get("/rules")
-def list_analysis_rules(_=Depends(get_current_admin)):
+def list_analysis_rules(_=Depends(get_current_user)):
     """Lista las reglas declarativas registradas en el Motor de Análisis RC506."""
     return RC506RulesRegistry.list_rules()
 
@@ -70,7 +70,7 @@ def list_analysis_rules(_=Depends(get_current_admin)):
 def get_insight_traceability(
     insight_id: int,
     db: Session = Depends(get_db),
-    _=Depends(get_current_admin)
+    _=Depends(get_current_user)
 ):
     """
     Cadena completa de trazabilidad determinística:

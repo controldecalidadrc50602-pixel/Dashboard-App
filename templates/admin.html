@@ -239,6 +239,8 @@ select.client-select {
   <div class="nav-item" data-page="kpis"><i class="fas fa-calculator"></i> Motor de KPIs</div>
   <div class="nav-item" data-page="reportes"><i class="fas fa-table"></i> Reportes mensuales</div>
   <div class="nav-item" data-page="links"><i class="fas fa-link"></i> Links públicos</div>
+  <div class="nav-section" id="nav-admin-section">Administración</div>
+  <div class="nav-item" data-page="users" id="nav-users"><i class="fas fa-users-cog"></i> Usuarios & Permisos</div>
 
 
 
@@ -616,6 +618,35 @@ select.client-select {
         <div style="text-align:center;padding:32px;color:#94a3b8;grid-column:1/-1;">
           Selecciona un cliente y haz clic en "Ejecutar Análisis RC506" para consultar las observaciones determinísticas.
         </div>
+      </div>
+  <!-- ── PAGE: GESTIÓN DE USUARIOS ── -->
+  <div class="page" id="page-users">
+    <div class="card">
+      <div class="card-title" style="justify-content:space-between;">
+        <span><i class="fas fa-users-cog"></i> Sistema de Usuarios & Control de Roles (RBAC)</span>
+        <button class="btn btn-primary" onclick="openUserModal()"><i class="fas fa-user-plus"></i> Nuevo Usuario</button>
+      </div>
+      <p style="color:#64748b;font-size:0.85rem;margin-bottom:20px;">
+        Administra cuentas de acceso al panel, asigna permisos (Super Admin u Operador) y gestiona el estado de activación.
+      </p>
+
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>Usuario</th>
+              <th>Nombre Completo</th>
+              <th>Email</th>
+              <th>Rol</th>
+              <th>Estado</th>
+              <th>Fecha Creación</th>
+              <th>Acción</th>
+            </tr>
+          </thead>
+          <tbody id="usersTableBody">
+            <tr><td colspan="7" style="text-align:center;padding:24px;color:#94a3b8;">Cargando lista de usuarios...</td></tr>
+          </tbody>
+        </table>
       </div>
     </div>
   </div>
@@ -1079,7 +1110,50 @@ select.client-select {
     <div class="modal-footer">
       <button class="btn btn-secondary" onclick="closeModal('linkModal')">Cancelar</button>
       <button class="btn btn-primary" onclick="saveLink()"><i class="fas fa-link"></i> Generar link</button>
+<!-- Modal: Usuario -->
+<div class="modal-overlay" id="userModal">
+  <div class="modal" style="max-width:600px;">
+    <div class="modal-header">
+      <div class="modal-title" id="userModalTitle"><i class="fas fa-user-shield"></i> Gestión de Usuario</div>
+      <button class="modal-close" onclick="closeModal('userModal')">✕</button>
     </div>
+    <div class="form-grid">
+      <div class="field">
+        <label>Nombre de usuario (username) *</label>
+        <input type="text" id="u-username" placeholder="Ej: operador_san_jose">
+      </div>
+      <div class="field">
+        <label>Rol de acceso *</label>
+        <select id="u-role">
+          <option value="operator">👷 Operador (Cargas, Dashboards & Reportes)</option>
+          <option value="superadmin">👑 Super Admin (Acceso Total)</option>
+        </select>
+      </div>
+      <div class="field">
+        <label>Nombre completo</label>
+        <input type="text" id="u-fullname" placeholder="Ej: Juan Pérez">
+      </div>
+      <div class="field">
+        <label>Correo electrónico</label>
+        <input type="email" id="u-email" placeholder="juan@rc506.com">
+      </div>
+      <div class="field">
+        <label>Contraseña <span id="u-pass-lbl" style="font-size:0.75rem;color:#64748b;">(requerida al crear)</span></label>
+        <input type="password" id="u-password" placeholder="Dejar vacío para mantener actual">
+      </div>
+      <div class="field">
+        <label>Estado de la cuenta</label>
+        <select id="u-active">
+          <option value="true">✅ Activo</option>
+          <option value="false">❌ Inactivo / Bloqueado</option>
+        </select>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-secondary" onclick="closeModal('userModal')">Cancelar</button>
+      <button class="btn btn-primary" id="saveUserBtn" onclick="saveUser()"><i class="fas fa-save"></i> Guardar Usuario</button>
+    </div>
+    <input type="hidden" id="u-id">
   </div>
 </div>
 
@@ -1107,11 +1181,48 @@ async function apiFetch(url, opts = {}) {
   return res;
 }
 
-// ── State ───────────────────────────────────────────
+// ── State & Role Security ───────────────────────────
 let allClients = [];
+let USER_ROLE = localStorage.getItem('user_role') || 'operator';
+let USER_NAME = localStorage.getItem('user_name') || 'Usuario';
+let FULL_NAME = localStorage.getItem('full_name') || 'Usuario RC506';
 
-// ── Navigation ──────────────────────────────────────
+if (TOKEN) {
+  try {
+    const payload = JSON.parse(atob(TOKEN.split('.')[1]));
+    if (payload.role) {
+      USER_ROLE = payload.role === 'admin' ? 'superadmin' : payload.role;
+      localStorage.setItem('user_role', USER_ROLE);
+    }
+    if (payload.sub) {
+      USER_NAME = payload.sub;
+      localStorage.setItem('user_name', USER_NAME);
+    }
+    if (payload.full_name) {
+      FULL_NAME = payload.full_name;
+      localStorage.setItem('full_name', FULL_NAME);
+    }
+  } catch (e) {}
+}
+
+function checkRolePermissions() {
+  const isSuperadmin = USER_ROLE === 'superadmin';
+  
+  const navUsers = document.getElementById('nav-users');
+  const navAdminSec = document.getElementById('nav-admin-section');
+  if (navUsers) navUsers.style.display = isSuperadmin ? 'flex' : 'none';
+  if (navAdminSec) navAdminSec.style.display = isSuperadmin ? 'block' : 'none';
+
+  const btnNewClient = document.querySelector('#page-clientes .btn-primary');
+  if (btnNewClient) btnNewClient.style.display = isSuperadmin ? 'inline-flex' : 'none';
+}
+
 function navToPage(page) {
+  if (page === 'users' && USER_ROLE !== 'superadmin') {
+    showToast('🔒 Acceso restringido a Super Admin', 'warn');
+    page = 'dashboard';
+  }
+
   document.querySelectorAll('.nav-item').forEach(i => {
     i.classList.toggle('active', i.dataset.page === page);
   });
@@ -1127,7 +1238,8 @@ function navToPage(page) {
     imports: ['Ingesta de Archivos', 'Carga, conservación inmutable y validación de fuentes'],
     kpis: ['Motor de KPIs Dinámico', 'Configuración de reglas, metas deterministas e histórico de evaluación'],
     reportes: ['Reportes mensuales', 'Ingreso y edición de datos por mes'],
-    links: ['Links públicos', 'Genera links para compartir con clientes']
+    links: ['Links públicos', 'Genera links para compartir con clientes'],
+    users: ['Usuarios & Permisos', 'Control de acceso basado en roles (RBAC: Super Admin + Operador)']
   };
   if (titles[page]) {
     document.getElementById('pageTitle').textContent = titles[page][0];
@@ -1141,6 +1253,7 @@ function navToPage(page) {
   if (page === 'kpis') { loadKpiConfigs(); loadKpiResults(); }
   if (page === 'reportes') loadReports();
   if (page === 'links') loadLinks();
+  if (page === 'users') loadUsers();
 }
 
 
@@ -1837,6 +1950,124 @@ async function deleteClient(id, name) {
   if (res.ok || res.status === 204) {
     loadClients(); loadClientSelector();
     showToast('🗑️ Cliente eliminado');
+  } else {
+    const err = await res.json();
+    showToast(`❌ ${err.detail || 'Error al eliminar cliente'}`, 'error');
+  }
+}
+
+// ── Users page ─────────────────────────────────────
+async function loadUsers() {
+  if (USER_ROLE !== 'superadmin') return;
+  const res = await apiFetch('/api/admin/users/');
+  if (!res.ok) return;
+  const users = await res.json();
+  const tbody = document.getElementById('usersTableBody');
+  if (!users.length) {
+    tbody.innerHTML = '<tr><td colspan="7"><div class="empty-state"><i class="fas fa-users"></i><h3>No hay usuarios registrados</h3></div></td></tr>';
+    return;
+  }
+  tbody.innerHTML = users.map(u => `
+    <tr>
+      <td>
+        <strong style="color:#0f172a;">${u.username}</strong>
+      </td>
+      <td>${u.full_name || '<span style="color:#94a3b8">—</span>'}</td>
+      <td>${u.email || '<span style="color:#94a3b8">—</span>'}</td>
+      <td>
+        <span class="badge ${u.role === 'superadmin' ? 'badge-blue' : 'badge-gray'}">
+          ${u.role === 'superadmin' ? '👑 Super Admin' : '👷 Operador'}
+        </span>
+      </td>
+      <td>
+        <span class="badge ${u.is_active ? 'badge-green' : 'badge-gray'}">
+          ${u.is_active ? '✅ Activo' : '❌ Inactivo'}
+        </span>
+      </td>
+      <td>${new Date(u.created_at).toLocaleDateString('es')}</td>
+      <td>
+        <div class="row-actions">
+          <button class="btn btn-sm btn-secondary btn-icon" title="Editar usuario" onclick="editUser(${JSON.stringify(u).replace(/"/g,'&quot;')})">
+            <i class="fas fa-edit"></i>
+          </button>
+          <button class="btn btn-sm ${u.is_active ? 'btn-danger' : 'btn-primary'} btn-icon" title="${u.is_active ? 'Desactivar' : 'Activar'}" onclick="toggleUserActive(${u.id}, ${u.is_active}, '${u.username}', '${u.role}')">
+            <i class="fas ${u.is_active ? 'fa-user-slash' : 'fa-user-check'}"></i>
+          </button>
+        </div>
+      </td>
+    </tr>
+  `).join('');
+}
+
+function openUserModal(u = null) {
+  const isEdit = u && typeof u === 'object' && u.id;
+  document.getElementById('u-id').value = isEdit ? u.id : '';
+  document.getElementById('u-username').value = isEdit ? u.username : '';
+  document.getElementById('u-username').disabled = Boolean(isEdit);
+  document.getElementById('u-role').value = isEdit ? u.role : 'operator';
+  document.getElementById('u-fullname').value = isEdit ? (u.full_name || '') : '';
+  document.getElementById('u-email').value = isEdit ? (u.email || '') : '';
+  document.getElementById('u-password').value = '';
+  document.getElementById('u-active').value = isEdit ? String(u.is_active) : 'true';
+  
+  const titleEl = document.getElementById('userModalTitle');
+  if (titleEl) {
+    titleEl.innerHTML = isEdit ? '<i class="fas fa-user-edit"></i> Editar Usuario' : '<i class="fas fa-user-plus"></i> ✨ Nuevo Usuario';
+  }
+  openModal('userModal');
+}
+
+function editUser(u) {
+  openUserModal(u);
+}
+
+async function saveUser() {
+  const id = document.getElementById('u-id').value;
+  const username = document.getElementById('u-username').value.trim();
+  const password = document.getElementById('u-password').value;
+  
+  if (!id && (!username || !password)) {
+    return showToast('⚠️ Nombre de usuario y contraseña son requeridos', 'warn');
+  }
+  
+  const body = {
+    username: username,
+    full_name: document.getElementById('u-fullname').value,
+    email: document.getElementById('u-email').value,
+    role: document.getElementById('u-role').value,
+    is_active: document.getElementById('u-active').value === 'true'
+  };
+  
+  if (password) body.password = password;
+
+  const url = id ? `/api/admin/users/${id}` : '/api/admin/users/';
+  const method = id ? 'PUT' : 'POST';
+  
+  const res = await apiFetch(url, { method, body: JSON.stringify(body) });
+  if (res.ok) {
+    closeModal('userModal');
+    loadUsers();
+    showToast(id ? '✅ Usuario actualizado' : '✅ Usuario creado');
+  } else {
+    const err = await res.json();
+    showToast(`❌ ${err.detail || 'Error al guardar usuario'}`, 'error');
+  }
+}
+
+async function toggleUserActive(userId, currentActive, username, role) {
+  if (role === 'superadmin' && currentActive) {
+    if (!confirm(`¿Estás seguro de modificar el estado del Super Admin "${username}"?`)) return;
+  }
+  const res = await apiFetch(`/api/admin/users/${userId}`, {
+    method: 'PUT',
+    body: JSON.stringify({ is_active: !currentActive })
+  });
+  if (res.ok) {
+    loadUsers();
+    showToast(currentActive ? '🚫 Usuario desactivado' : '✅ Usuario activado');
+  } else {
+    const err = await res.json();
+    showToast(`❌ ${err.detail || 'Error al cambiar estado'}`, 'error');
   }
 }
 

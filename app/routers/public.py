@@ -7,7 +7,7 @@ from app.database import get_db
 from app.models import PublicView, MonthlyReport, Client
 from app.schemas import PublicViewCreate, PublicViewOut
 from app.auth import hash_password, verify_password
-from app.routers.auth import get_current_admin
+from app.dependencies import get_current_user
 
 router = APIRouter(tags=["public"])
 
@@ -17,7 +17,7 @@ MONTH_NAMES = ["", "Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio",
 
 # ── Admin: gestión de links públicos ───────────────────────────────────────
 @router.get("/api/clients/{client_id}/public-views", response_model=List[PublicViewOut])
-def list_public_views(client_id: int, db: Session = Depends(get_db), _=Depends(get_current_admin)):
+def list_public_views(client_id: int, db: Session = Depends(get_db), _=Depends(get_current_user)):
     views = db.query(PublicView).filter(PublicView.client_id == client_id).all()
     result = []
     for v in views:
@@ -28,7 +28,7 @@ def list_public_views(client_id: int, db: Session = Depends(get_db), _=Depends(g
 
 
 @router.post("/api/clients/{client_id}/public-views", status_code=201)
-def create_public_view(client_id: int, body: PublicViewCreate, db: Session = Depends(get_db), _=Depends(get_current_admin)):
+def create_public_view(client_id: int, body: PublicViewCreate, db: Session = Depends(get_db), _=Depends(get_current_user)):
     client = db.query(Client).filter(Client.id == client_id).first()
     if not client:
         raise HTTPException(status_code=404, detail="Cliente no encontrado")
@@ -47,7 +47,7 @@ def create_public_view(client_id: int, body: PublicViewCreate, db: Session = Dep
 @router.put("/api/clients/{client_id}/public-views/{view_id}")
 def update_public_view(
     client_id: int, view_id: int, body: PublicViewCreate,
-    db: Session = Depends(get_db), _=Depends(get_current_admin)
+    db: Session = Depends(get_db), _=Depends(get_current_user)
 ):
     view = db.query(PublicView).filter(PublicView.id == view_id, PublicView.client_id == client_id).first()
     if not view:
@@ -63,7 +63,7 @@ def update_public_view(
 
 
 @router.delete("/api/clients/{client_id}/public-views/{view_id}", status_code=204)
-def delete_public_view(client_id: int, view_id: int, db: Session = Depends(get_db), _=Depends(get_current_admin)):
+def delete_public_view(client_id: int, view_id: int, db: Session = Depends(get_db), _=Depends(get_current_user)):
     view = db.query(PublicView).filter(PublicView.id == view_id, PublicView.client_id == client_id).first()
     if not view:
         raise HTTPException(status_code=404, detail="Vista pública no encontrada")

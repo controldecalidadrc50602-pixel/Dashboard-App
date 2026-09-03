@@ -5,7 +5,7 @@ from typing import List, Optional
 from app.database import get_db
 from app.models import Client, KPIConfig, KPIResult
 from app.schemas import KPIConfigOut, KPIConfigCreate, KPIConfigUpdate, KPIResultOut
-from app.routers.auth import get_current_admin
+from app.dependencies import get_current_user, get_username
 from app.audit import log_audit_action
 
 from app.services.kpi_engine.kpi_service import (
@@ -21,7 +21,7 @@ router = APIRouter(prefix="/api/admin/kpis", tags=["kpis"])
 def list_client_kpi_configs(
     client_id: int,
     db: Session = Depends(get_db),
-    _=Depends(get_current_admin)
+    _=Depends(get_current_user)
 ):
     """Obtiene la lista de configuraciones KPI de un cliente."""
     configs = db.query(KPIConfig).filter(KPIConfig.client_id == client_id).all()
@@ -34,14 +34,14 @@ def create_client_kpi_config(
     data: KPIConfigCreate,
     request: Request,
     db: Session = Depends(get_db),
-    admin: dict = Depends(get_current_admin)
+    admin: dict = Depends(get_current_user)
 ):
     """Crea un nuevo KPI dinámico para un cliente."""
     try:
         config = create_kpi_config(db, client_id, data.model_dump())
         log_audit_action(
             db,
-            username=admin.get("sub", "admin"),
+            username=get_username(admin),
             action="CREATE_KPI_CONFIG",
             resource_type="kpi_config",
             resource_id=str(config.id),
@@ -59,14 +59,14 @@ def update_kpi_config_endpoint(
     data: KPIConfigUpdate,
     request: Request,
     db: Session = Depends(get_db),
-    admin: dict = Depends(get_current_admin)
+    admin: dict = Depends(get_current_user)
 ):
     """Actualiza la configuración o metas de un KPI."""
     try:
         config = update_kpi_config(db, kpi_config_id, data.model_dump(exclude_unset=True))
         log_audit_action(
             db,
-            username=admin.get("sub", "admin"),
+            username=get_username(admin),
             action="UPDATE_KPI_CONFIG",
             resource_type="kpi_config",
             resource_id=str(config.id),
@@ -82,7 +82,7 @@ def update_kpi_config_endpoint(
 def toggle_or_delete_kpi_config(
     kpi_config_id: int,
     db: Session = Depends(get_db),
-    admin: dict = Depends(get_current_admin)
+    admin: dict = Depends(get_current_user)
 ):
     """Desactiva una configuración de KPI."""
     config = db.query(KPIConfig).filter(KPIConfig.id == kpi_config_id).first()
@@ -98,14 +98,14 @@ def calculate_kpis_endpoint(
     client_id: int,
     period: str,
     db: Session = Depends(get_db),
-    admin: dict = Depends(get_current_admin)
+    admin: dict = Depends(get_current_user)
 ):
     """Ejecuta el cálculo de KPIs dinámicos para un cliente y período."""
     try:
         results = calculate_kpis_for_client_period(db, client_id, period)
         log_audit_action(
             db,
-            username=admin.get("sub", "admin"),
+            username=get_username(admin),
             action="CALCULATE_KPIS",
             resource_type="kpi_results",
             details={"client_id": client_id, "period": period, "count": len(results)}
@@ -120,7 +120,7 @@ def get_kpi_results(
     client_id: Optional[int] = None,
     period: Optional[str] = None,
     db: Session = Depends(get_db),
-    _=Depends(get_current_admin)
+    _=Depends(get_current_user)
 ):
     """Consulta el historial de resultados KPI calculados."""
     q = db.query(KPIResult)
@@ -136,7 +136,7 @@ def get_kpi_results(
 def get_kpi_result_traceability(
     result_id: int,
     db: Session = Depends(get_db),
-    _=Depends(get_current_admin)
+    _=Depends(get_current_user)
 ):
     """Devuelve la trazabilidad completa del cálculo de un KPI (Configuración, Importación, Fórmulas, Métricas)."""
     res = db.query(KPIResult).filter(KPIResult.id == result_id).first()

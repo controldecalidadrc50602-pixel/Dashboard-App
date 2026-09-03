@@ -8,9 +8,10 @@ import os
 
 load_dotenv()
 
-from app.database import Base, engine
+from app.database import Base, engine, SessionLocal
 import app.models
-from app.routers import auth, clients, reports, public, dashboard_global, imports, kpis, analysis
+from app.routers import auth, clients, reports, public, dashboard_global, imports, kpis, analysis, users
+from app.dependencies import seed_default_users
 
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
@@ -24,6 +25,9 @@ templates = Jinja2Templates(directory=templates_dir)
 # Inicialización de base de datos
 try:
     Base.metadata.create_all(bind=engine)
+    db = SessionLocal()
+    seed_default_users(db)
+    db.close()
 except Exception as e:
     print(f"Advertencia al inicializar tablas de BD: {e}")
 
@@ -53,6 +57,7 @@ app.include_router(dashboard_global.router)
 app.include_router(imports.router)
 app.include_router(kpis.router)
 app.include_router(analysis.router)
+app.include_router(users.router)
 
 
 

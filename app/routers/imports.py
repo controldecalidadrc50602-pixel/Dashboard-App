@@ -5,9 +5,9 @@ import io
 import csv
 
 from app.database import get_db
-from app.models import Client, ReportImport
+from app.models import Client, ReportImport, User
 from app.schemas import ReportImportOut, ReportImportPreview
-from app.routers.auth import get_current_admin
+from app.dependencies import get_current_user, get_username
 from app.audit import log_audit_action
 
 from app.services.hash_service import calculate_sha256, check_duplicate_import
@@ -27,7 +27,7 @@ async def upload_and_import_file(
     report_type: Optional[str] = Form(None),
     period: Optional[str] = Form(None),
     db: Session = Depends(get_db),
-    admin: dict = Depends(get_current_admin)
+    admin: dict = Depends(get_current_user)
 ):
     # 1. Verificar existencia del cliente
     client = db.query(Client).filter(Client.id == client_id).first()
@@ -43,7 +43,7 @@ async def upload_and_import_file(
 
     log_audit_action(
         db,
-        username=admin.get("sub", "admin"),
+        username=get_username(admin),
         action="IMPORT_STARTED",
         resource_type="import",
         details={"filename": filename, "client_id": client_id, "file_hash": file_hash},
@@ -66,7 +66,7 @@ async def upload_and_import_file(
             warnings=[{"row": 0, "field": "hash", "message": f"Archivo idéntico al previamente cargado (Import ID {existing_import.id}).", "severity": "WARNING"}],
             errors=[],
             metadata_info=existing_import.metadata_info,
-            uploaded_by=admin.get("sub", "admin")
+            uploaded_by=get_username(admin)
         )
         db.add(dup_import)
         db.commit()
@@ -74,7 +74,7 @@ async def upload_and_import_file(
 
         log_audit_action(
             db,
-            username=admin.get("sub", "admin"),
+            username=get_username(admin),
             action="IMPORT_DUPLICATE",
             resource_type="import",
             resource_id=str(dup_import.id),
@@ -91,7 +91,7 @@ async def upload_and_import_file(
     except ValueError as val_err:
         log_audit_action(
             db,
-            username=admin.get("sub", "admin"),
+            username=get_username(admin),
             action="IMPORT_FAILED",
             resource_type="import",
             details={"reason": str(val_err)}
@@ -135,7 +135,7 @@ async def upload_and_import_file(
         warnings=warnings,
         errors=errors,
         metadata_info=analysis,
-        uploaded_by=admin.get("sub", "admin")
+        uploaded_by=get_username(admin)
     )
 
     db.add(import_obj)
@@ -144,7 +144,7 @@ async def upload_and_import_file(
 
     log_audit_action(
         db,
-        username=admin.get("sub", "admin"),
+        username=get_username(admin),
         action="IMPORT_COMPLETED" if status != "INVALID" else "IMPORT_FAILED",
         resource_type="import",
         resource_id=str(import_obj.id),
@@ -162,7 +162,7 @@ def list_imports(
     source_code: Optional[str] = None,
     status: Optional[str] = None,
     db: Session = Depends(get_db),
-    _=Depends(get_current_admin)
+    _=Depends(get_current_user)
 ):
     q = db.query(ReportImport)
     if client_id:
@@ -185,7 +185,7 @@ def list_imports(
 def get_import_detail(
     import_id: int,
     db: Session = Depends(get_db),
-    _=Depends(get_current_admin)
+    _=Depends(get_current_user)
 ):
     imp = db.query(ReportImport).filter(ReportImport.id == import_id).first()
     if not imp:
@@ -200,7 +200,7 @@ def get_import_preview(
     import_id: int,
     request: Request,
     db: Session = Depends(get_db),
-    admin: dict = Depends(get_current_admin)
+    admin: dict = Depends(get_current_user)
 ):
     imp = db.query(ReportImport).filter(ReportImport.id == import_id).first()
     if not imp:
@@ -209,7 +209,7 @@ def get_import_preview(
     # Registrar acceso a archivo RAW en log de auditoría
     log_audit_action(
         db,
-        username=admin.get("sub", "admin"),
+        username=get_username(admin),
         action="RAW_FILE_ACCESSED",
         resource_type="import",
         resource_id=str(imp.id),
@@ -261,14 +261,14 @@ from app.models import NormalizedRecord
 def process_import_endpoint(
     import_id: int,
     db: Session = Depends(get_db),
-    admin: dict = Depends(get_current_admin)
+    admin: dict = Depends(get_current_user)
 ):
     """Ejecuta el parser específico y guarda los NormalizedRecords (Reprocesable)."""
     try:
         imp, summary = process_and_normalize_import(db, import_id)
         log_audit_action(
             db,
-            username=admin.get("sub", "admin"),
+            username=get_username(admin),
             action="IMPORT_NORMALIZED",
             resource_type="import",
             resource_id=str(import_id),
@@ -283,7 +283,7 @@ def process_import_endpoint(
 def get_normalized_summary_endpoint(
     import_id: int,
     db: Session = Depends(get_db),
-    _=Depends(get_current_admin)
+    _=Depends(get_current_user)
 ):
     """Devuelve el resumen de registros normalizados y métricas operativas base."""
     imp = db.query(ReportImport).filter(ReportImport.id == import_id).first()
@@ -309,7 +309,7 @@ def get_normalized_summary_endpoint(
 def get_import_quality_endpoint(
     import_id: int,
     db: Session = Depends(get_db),
-    _=Depends(get_current_admin)
+    _=Depends(get_current_user)
 ):
     """Devuelve el reporte de calidad de datos, trazabilidad y estado por fila."""
     imp = db.query(ReportImport).filter(ReportImport.id == import_id).first()
