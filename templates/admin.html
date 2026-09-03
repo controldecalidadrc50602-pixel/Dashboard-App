@@ -1650,13 +1650,6 @@ async function cleanupDuplicateImports() {
   showToast('✅ ' + (data.detail || 'Registros duplicados eliminados correctamente'));
   loadImportsHistory();
 }
-    return showToast('❌ Error al normalizar: ' + (err.detail || 'Error interno'), 'error');
-  }
-  const summary = await res.json();
-  showToast(`✅ Normalización completada (${summary.total_rows_processed} filas)`);
-  loadImportsHistory();
-  viewNormalizedSummary(importId);
-}
 
 async function viewNormalizedSummary(importId) {
   openModal('normalizedModal');
