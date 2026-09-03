@@ -2747,6 +2747,9 @@ function openModal(id) {
   console.log('openModal EXECUTED for id:', id);
   const m = document.getElementById(id);
   if (m) {
+    if (m.parentElement !== document.body) {
+      document.body.appendChild(m);
+    }
     m.classList.add('open');
     m.style.setProperty('display', 'flex', 'important');
     m.style.setProperty('position', 'fixed', 'important');

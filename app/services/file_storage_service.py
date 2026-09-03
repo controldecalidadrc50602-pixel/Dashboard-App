@@ -1,11 +1,32 @@
 import os
 import uuid
+import tempfile
+import logging
 from typing import Tuple
 
-if os.getenv("VERCEL"):
-    RAW_STORAGE_DIR = os.path.join("/tmp", "uploads", "raw")
-else:
-    RAW_STORAGE_DIR = os.path.join(os.getcwd(), "uploads", "raw")
+logger = logging.getLogger(__name__)
+
+
+def get_storage_dir() -> str:
+    """Determina dinámicamente un directorio escribible para almacenamiento inmutable RAW."""
+    if os.getenv("VERCEL") or os.getenv("VERCEL_ENV") or os.getenv("AWS_LAMBDA_FUNCTION_NAME"):
+        path = os.path.join("/tmp", "uploads", "raw")
+    else:
+        path = os.path.join(os.getcwd(), "uploads", "raw")
+    
+    try:
+        os.makedirs(path, exist_ok=True)
+        test_file = os.path.join(path, ".write_test")
+        with open(test_file, "w") as f:
+            f.write("test")
+        os.remove(test_file)
+        return path
+    except Exception as e:
+        logger.warning(f"Directorio {path} no es escribible ({e}). Usando directorio temporal fallback.")
+        tmp_path = os.path.join(tempfile.gettempdir(), "uploads", "raw")
+        os.makedirs(tmp_path, exist_ok=True)
+        return tmp_path
+
 
 MAX_FILE_SIZE_BYTES = 50 * 1024 * 1024  # 50 MB
 
@@ -16,9 +37,9 @@ DANGEROUS_EXTENSIONS = {
 }
 
 
-def ensure_raw_storage_dir():
+def ensure_raw_storage_dir() -> str:
     """Garantiza la existencia del directorio seguro uploads/raw/."""
-    os.makedirs(RAW_STORAGE_DIR, exist_ok=True)
+    return get_storage_dir()
 
 
 def is_extension_allowed(filename: str) -> bool:
@@ -34,7 +55,7 @@ def save_raw_file(content: bytes, original_filename: str) -> Tuple[str, str, int
     Guarda inmutablemente los bytes del archivo original en uploads/raw/ usando un identificador UUID interno.
     Retorna (storage_path, file_format, file_size).
     """
-    ensure_raw_storage_dir()
+    raw_dir = ensure_raw_storage_dir()
     
     if len(content) > MAX_FILE_SIZE_BYTES:
         raise ValueError(f"El archivo excede el tamaño máximo permitido de {MAX_FILE_SIZE_BYTES // (1024*1024)} MB")
@@ -47,7 +68,7 @@ def save_raw_file(content: bytes, original_filename: str) -> Tuple[str, str, int
         raise ValueError(f"Extensión de archivo no permitida o riesgosa: '{ext}'")
 
     internal_filename = f"{uuid.uuid4()}{ext}"
-    storage_path = os.path.join(RAW_STORAGE_DIR, internal_filename)
+    storage_path = os.path.join(raw_dir, internal_filename)
 
     with open(storage_path, "wb") as f:
         f.write(content)
