@@ -67,6 +67,8 @@ app.include_router(qualitative.router)
 
 
 
+import traceback
+
 # Middleware de restauración de path original para Vercel Serverless
 @app.middleware("http")
 async def fix_vercel_path_middleware(request: Request, call_next):
@@ -78,7 +80,25 @@ async def fix_vercel_path_middleware(request: Request, call_next):
         request.scope["path"] = clean_path
     
     print(f"METHOD: {request.method} | FINAL_PATH: {request.scope.get('path')}")
-    return await call_next(request)
+    try:
+        return await call_next(request)
+    except Exception as exc:
+        tb = traceback.format_exc()
+        print(f"CRITICAL SERVERLESS EXCEPTION on {request.scope.get('path')}:\n{tb}")
+        return JSONResponse(
+            status_code=500,
+            content={"detail": str(exc), "traceback": tb.splitlines()}
+        )
+
+
+@app.exception_handler(Exception)
+async def global_exception_handler(request: Request, exc: Exception):
+    tb = traceback.format_exc()
+    print(f"CRITICAL FASTAPI EXCEPTION on {request.scope.get('path')}:\n{tb}")
+    return JSONResponse(
+        status_code=500,
+        content={"detail": str(exc), "traceback": tb.splitlines()}
+    )
 
 
 
