@@ -71,26 +71,31 @@ def is_description_row(row: List[str], headers: List[str]) -> bool:
     return False
 
 
-def detect_botmaker_report_type(headers: List[str], filename: str) -> str:
-    """Detecta automáticamente el tipo de reporte Botmaker por nombre de archivo o columnas (español e inglés)."""
+def detect_botmaker_report_type(headers: List[str], filename: str = "") -> str:
+    """
+    Detecta automáticamente el tipo de reporte Botmaker.
+    Prioridad 1: Nombre de archivo (absoluta).
+    Prioridad 2: Columnas (Fallback).
+    """
     fn = (filename or "").lower()
+
+    # Prioridad 1: Detección por nombre de archivo
+    if "sessionstartingcauses" in fn or "session_starting" in fn or "session_causes" in fn:
+        return "session_causes"
+    if "operatorssessionsdebug" in fn or "operators_sessions" in fn or "operators_debug" in fn:
+        return "operators_debug"
+    if "users" in fn:
+        return "users"
+
+    # Prioridad 2: Detección por columnas como fallback
     hl = [str(h).lower() for h in headers]
     hl_str = " ".join(hl)
 
-    # 1. Por columnas
     if any(k in hl_str for k in ["conversaciones cerradas", "tiempo medio de respuesta", "transferencias recibidas", "operatorssessions"]):
-        return "operatorsSessionsDebug"
-    if any(k in hl_str for k in ["plantilla", "template", "no enviado", "entregado", "leída", "leida", "respondida", "sessionstartingcauses"]):
-        return "sessionStartingCauses"
+        return "operators_debug"
+    if any(k in hl_str for k in ["nombre plantilla/notificación", "nombre plantilla", "plantilla", "template", "no enviado", "entregado", "leída", "leida", "respondida", "sessionstartingcauses"]):
+        return "session_causes"
     if any(k in hl_str for k in ["habló el agente", "hablo el agente", "mensajes bot", "mensajes usuario", "mensajes agente", "link conversación", "link conversacion"]):
-        return "users"
-
-    # 2. Por nombre de archivo
-    if "operator" in fn or "debug" in fn:
-        return "operatorsSessionsDebug"
-    if "session" in fn or "cause" in fn or "plantilla" in fn:
-        return "sessionStartingCauses"
-    if "user" in fn:
         return "users"
 
     return "generic"

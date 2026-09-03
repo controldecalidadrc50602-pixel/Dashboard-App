@@ -222,6 +222,9 @@ def process_and_normalize_import(db: Session, import_id: int) -> Tuple[ReportImp
     db.commit()
     db.refresh(imp)
 
+    # 6. Sincronizar con monthly_reports y evaluar motor de KPIs
+    sync_monthly_report_and_kpis(db, imp.client_id, imp.period)
+
     summary = {
         "import_id": imp.id,
         "parser_version": parser.PARSER_VERSION,
@@ -234,3 +237,127 @@ def process_and_normalize_import(db: Session, import_id: int) -> Tuple[ReportImp
     }
 
     return imp, summary
+
+
+def sync_monthly_report_and_kpis(db: Session, client_id: int, period: str):
+    """
+    Consolida las métricas extraídas de todas las importaciones del período (YYYY-MM),
+    actualiza o crea el registro en `monthly_reports` y ejecuta la evaluación del motor de KPIs.
+    """
+    if not period or "-" not in period:
+        return
+
+    try:
+        parts = period.split("-")
+        year = int(parts[0])
+        month = int(parts[1])
+    except (ValueError, IndexError):
+        return
+
+    from app.models import MonthlyReport
+    from app.services.kpi_engine.kpi_service import calculate_kpis_for_client_period
+
+    imports = db.query(ReportImport).filter(
+        ReportImport.client_id == client_id,
+        ReportImport.period == period,
+        ReportImport.status.in_(["VALID", "VALID_WITH_WARNINGS", "PROCESSED", "PROCESSED_WITH_WARNINGS"])
+    ).all()
+
+    botmaker_consolidated = {
+        "total_conversations": 0,
+        "conversations_with_agent": 0,
+        "conversations_bot_only": 0,
+        "total_messages_user": 0,
+        "total_messages_bot": 0,
+        "total_messages_agent": 0,
+        "total_templates_sent": 0,
+        "total_templates_delivered": 0,
+        "total_templates_read": 0,
+        "total_templates_responded": 0,
+        "total_templates_failed": 0,
+        "new_users": 0,
+        "total_agent_sessions": 0,
+        "total_closed_conversations": 0,
+        "avg_response_time_seconds": None,
+        "total_transfers_received": 0,
+        "agents_list": [],
+        "typifications": {}
+    }
+
+    all_response_times = []
+
+    for imp in imports:
+        calc_m = (imp.metadata_info or {}).get("calculated_metrics", {})
+        if not calc_m:
+            continue
+
+        if "total_conversations" in calc_m:
+            botmaker_consolidated["total_conversations"] += calc_m.get("total_conversations", 0)
+            botmaker_consolidated["conversations_with_agent"] += calc_m.get("conversations_with_agent", 0)
+            botmaker_consolidated["conversations_bot_only"] += calc_m.get("conversations_bot_only", 0)
+            botmaker_consolidated["total_messages_user"] += calc_m.get("total_messages_user", 0)
+            botmaker_consolidated["total_messages_bot"] += calc_m.get("total_messages_bot", 0)
+            botmaker_consolidated["total_messages_agent"] += calc_m.get("total_messages_agent", 0)
+
+        if "total_templates_sent" in calc_m:
+            botmaker_consolidated["total_templates_sent"] += calc_m.get("total_templates_sent", 0)
+            botmaker_consolidated["total_templates_delivered"] += calc_m.get("total_templates_delivered", 0)
+            botmaker_consolidated["total_templates_read"] += calc_m.get("total_templates_read", 0)
+            botmaker_consolidated["total_templates_responded"] += calc_m.get("total_templates_responded", 0)
+            botmaker_consolidated["total_templates_failed"] += calc_m.get("total_templates_failed", 0)
+            botmaker_consolidated["new_users"] += calc_m.get("new_users", 0)
+
+        if "total_agent_sessions" in calc_m:
+            botmaker_consolidated["total_agent_sessions"] += calc_m.get("total_agent_sessions", 0)
+            botmaker_consolidated["total_closed_conversations"] += calc_m.get("total_closed_conversations", 0)
+            if calc_m.get("avg_response_time") is not None:
+                all_response_times.append(calc_m["avg_response_time"])
+            botmaker_consolidated["total_transfers_received"] += calc_m.get("total_transfers_received", 0)
+            for ag in calc_m.get("agents_list", []):
+                if ag and ag not in botmaker_consolidated["agents_list"]:
+                    botmaker_consolidated["agents_list"].append(ag)
+            for typ, cnt in (calc_m.get("typifications") or {}).items():
+                botmaker_consolidated["typifications"][typ] = botmaker_consolidated["typifications"].get(typ, 0) + cnt
+
+    if all_response_times:
+        botmaker_consolidated["avg_response_time_seconds"] = round(sum(all_response_times) / len(all_response_times), 2)
+
+    rep = db.query(MonthlyReport).filter(
+        MonthlyReport.client_id == client_id,
+        MonthlyReport.year == year,
+        MonthlyReport.month == month
+    ).first()
+
+    total_chats_val = botmaker_consolidated["total_conversations"] or botmaker_consolidated["total_agent_sessions"] or (botmaker_consolidated["total_messages_user"] + botmaker_consolidated["total_messages_bot"])
+    total_support_val = botmaker_consolidated["conversations_with_agent"] or botmaker_consolidated["total_closed_conversations"]
+
+    if not rep:
+        rep = MonthlyReport(
+            client_id=client_id,
+            year=year,
+            month=month,
+            chats=total_chats_val,
+            support=total_support_val,
+            extra_data={
+                "botmaker": botmaker_consolidated,
+                "botmaker_interactions": total_chats_val
+            }
+        )
+        db.add(rep)
+    else:
+        if total_chats_val > 0:
+            rep.chats = total_chats_val
+        if total_support_val > 0:
+            rep.support = total_support_val
+        ed = dict(rep.extra_data or {})
+        ed["botmaker"] = botmaker_consolidated
+        ed["botmaker_interactions"] = total_chats_val or ed.get("botmaker_interactions", 0)
+        rep.extra_data = ed
+
+    db.commit()
+    db.refresh(rep)
+
+    try:
+        calculate_kpis_for_client_period(db, client_id, period)
+    except Exception:
+        pass

@@ -4,30 +4,33 @@ from app.services.detector_service import is_description_row
 # Definición conceptual de firmas esperadas para reportes Botmaker (Español e Inglés)
 BOTMAKER_EXPECTED_CLUSTERS = {
     "users": [
-        ["conversation", "conversación", "conversacion", "link"],
-        ["date", "fecha"],
-        ["session", "sesión", "sesion"],
-        ["channel", "canal"],
-        ["contact", "contacto", "user", "usuario", "número", "numero"],
-        ["agent", "agente", "habló el agente", "hablo el agente"],
-        ["messages", "mensajes"]
+        ["conversation", "conversación", "conversacion", "link", "id sesión", "id sesion"],
+        ["date", "fecha", "fecha sesión", "fecha sesion"],
+        ["session", "sesión", "sesion", "id sesión", "id sesion"],
+        ["channel", "canal", "id canal"],
+        ["contact", "contacto", "user", "usuario", "número", "numero", "id contacto/número", "id contacto/numero"],
+        ["agent", "agente", "habló el agente", "hablo el agente", "nombre agente"],
+        ["messages", "mensajes", "mensajes usuario", "mensajes bot", "mensajes agente"]
     ],
-    "operatorsSessionsDebug": [
-        ["session", "sesión", "sesion"],
-        ["user", "usuario"],
-        ["start", "inicio"],
-        ["agent", "agente"],
+    "operators_debug": [
+        ["session", "sesión", "sesion", "id sesión", "id sesion"],
+        ["user", "usuario", "id usuario"],
+        ["start", "inicio", "fecha/tiempo inicio sesión", "fecha/tiempo inicio sesion"],
+        ["agent", "agente", "nombre agente"],
         ["queue", "cola"],
         ["typification", "tipificación", "tipificacion"]
     ],
-    "sessionStartingCauses": [
-        ["user", "usuario", "contact", "contacto"],
-        ["channel", "canal"],
-        ["template", "plantilla", "notificación", "notificacion"],
+    "session_causes": [
+        ["user", "usuario", "contact", "contacto", "id usuario", "id contacto/número", "id contacto/numero"],
+        ["channel", "canal", "id canal"],
+        ["template", "plantilla", "notificación", "notificacion", "nombre plantilla/notificación", "nombre plantilla/notificacion"],
         ["sent", "enviado"],
         ["delivered", "entregado"]
     ]
 }
+# Soporte de alias para retrocompatibilidad
+BOTMAKER_EXPECTED_CLUSTERS["operatorsSessionsDebug"] = BOTMAKER_EXPECTED_CLUSTERS["operators_debug"]
+BOTMAKER_EXPECTED_CLUSTERS["sessionStartingCauses"] = BOTMAKER_EXPECTED_CLUSTERS["session_causes"]
 
 # Definición de reportes Yeastar (Marcados como NO VERIFICADO — REQUIERE ARCHIVO DE MUESTRA)
 YEASTAR_REPORT_TYPES = ["Extension", "Call Center", "Call Activity", "AI Reports"]

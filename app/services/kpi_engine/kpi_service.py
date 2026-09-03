@@ -102,12 +102,35 @@ def calculate_kpis_for_client_period(
         if matching_import:
             metrics_summary = calculate_base_metrics(db, matching_import.id)
             b_metrics = metrics_summary.get("metrics", {})
+            bm_metrics = metrics_summary.get("botmaker_metrics", {})
+            calc_m = (matching_import.metadata_info or {}).get("calculated_metrics", {})
+
+            # Buscar reporte mensual de ese cliente y período
+            monthly_rep = None
+            if period and "-" in period:
+                try:
+                    p_yr, p_mo = int(period.split("-")[0]), int(period.split("-")[1])
+                    from app.models import MonthlyReport
+                    monthly_rep = db.query(MonthlyReport).filter(
+                        MonthlyReport.client_id == client_id,
+                        MonthlyReport.year == p_yr,
+                        MonthlyReport.month == p_mo
+                    ).first()
+                except Exception:
+                    pass
+
+            bm_extra = ((monthly_rep.extra_data or {}).get("botmaker", {})) if monthly_rep else {}
 
             for input_name in (cfg.input_metrics or []):
-                # Buscar en base_metrics o en normalized_data
                 val = None
                 if input_name in b_metrics:
                     val = b_metrics[input_name].get("value")
+                elif input_name in bm_metrics:
+                    val = bm_metrics[input_name]
+                elif input_name in calc_m:
+                    val = calc_m[input_name]
+                elif input_name in bm_extra:
+                    val = bm_extra[input_name]
                 else:
                     # Buscar en los registros normalizados directos
                     records = db.query(NormalizedRecord).filter(
@@ -121,11 +144,10 @@ def calculate_kpis_for_client_period(
                     elif input_name in ["abandoned", "abandonadas"]:
                         val = sum(1 for r in records if r.is_abandoned is True)
                     elif records:
-                        # Extraer de raw_data o normalized_data del primer registro
                         sample_row = records[0].normalized_data or records[0].raw_data
                         val = sample_row.get(input_name)
 
-                input_vals[input_name] = float(val) if val is not None else None
+                input_vals[input_name] = float(val) if (val is not None and not isinstance(val, (list, dict))) else None
 
         # Evaluar fórmula
         computed_val, err_msg = FormulaEvaluator.evaluate(
