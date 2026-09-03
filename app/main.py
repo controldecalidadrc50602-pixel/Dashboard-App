@@ -8,7 +8,7 @@ import os
 
 load_dotenv()
 
-from app.database import Base, engine, SessionLocal
+from app.database import Base, engine, SessionLocal, ensure_db_tables
 import app.models
 from app.routers import auth, clients, reports, public, dashboard_global, imports, kpis, analysis, users, qualitative
 from app.dependencies import seed_default_users
@@ -24,7 +24,7 @@ templates = Jinja2Templates(directory=templates_dir)
 
 # Inicialización de base de datos
 try:
-    Base.metadata.create_all(bind=engine)
+    ensure_db_tables()
     db = SessionLocal()
     seed_default_users(db)
     db.close()

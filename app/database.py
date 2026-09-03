@@ -29,8 +29,23 @@ engine = create_engine(DATABASE_URL, **engine_kwargs)
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 Base = declarative_base()
 
+_tables_created = False
+
+
+def ensure_db_tables():
+    """Garantiza la creación idempotente de todas las tablas ORM en Supabase / PostgreSQL / SQLite."""
+    global _tables_created
+    if not _tables_created:
+        try:
+            import app.models  # Importar explícitamente todos los modelos SQLAlchemy
+            Base.metadata.create_all(bind=engine)
+            _tables_created = True
+        except Exception as e:
+            print(f"Advertencia al verificar o crear tablas de BD: {e}")
+
 
 def get_db():
+    ensure_db_tables()
     db = SessionLocal()
     try:
         yield db
