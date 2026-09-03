@@ -3,11 +3,12 @@ from sqlalchemy.orm import Session
 from typing import List, Optional
 import io
 import csv
+import os
 
 from app.database import get_db
-from app.models import Client, ReportImport, User
+from app.models import Client, ReportImport, User, NormalizedRecord
 from app.schemas import ReportImportOut, ReportImportPreview
-from app.dependencies import get_current_user, get_username
+from app.dependencies import get_current_user, get_username, require_superadmin
 from app.audit import log_audit_action
 
 from app.services.hash_service import calculate_sha256, check_duplicate_import
@@ -344,4 +345,78 @@ def get_import_quality_endpoint(
         "import_warnings": imp.warnings or [],
         "import_errors": imp.errors or []
     }
+
+
+@router.delete("/duplicates")
+def delete_duplicate_imports(
+    db: Session = Depends(get_db),
+    admin: User = Depends(require_superadmin)
+):
+    """Elimina todos los registros de ingesta marcados como DUPLICATE (Solo Super Admin)."""
+    duplicates = db.query(ReportImport).filter(ReportImport.status == "DUPLICATE").all()
+    count = len(duplicates)
+
+    for dup in duplicates:
+        db.query(NormalizedRecord).filter(NormalizedRecord.import_id == dup.id).delete(synchronize_session=False)
+        db.delete(dup)
+
+    db.commit()
+
+    log_audit_action(
+        db,
+        username=get_username(admin),
+        action="IMPORTS_DUPLICATES_CLEANED",
+        resource_type="import",
+        details={"count": count}
+    )
+
+    return {"detail": f"Se eliminaron {count} registros duplicados correctamente", "deleted_count": count}
+
+
+@router.delete("/{import_id}")
+def delete_import_endpoint(
+    import_id: int,
+    db: Session = Depends(get_db),
+    admin: User = Depends(require_superadmin)
+):
+    """Elimina un registro de ingesta, sus registros normalizados y su archivo físico (Solo Super Admin)."""
+    imp = db.query(ReportImport).filter(ReportImport.id == import_id).first()
+    if not imp:
+        raise HTTPException(status_code=404, detail="Importación no encontrada")
+
+    # 1. Eliminar archivo físico RAW si existe
+    if imp.storage_path and os.path.exists(imp.storage_path):
+        try:
+            os.remove(imp.storage_path)
+        except Exception:
+            pass
+
+    # 2. Eliminar registros normalizados asociados
+    db.query(NormalizedRecord).filter(NormalizedRecord.import_id == import_id).delete(synchronize_session=False)
+
+    filename = imp.original_filename
+    client_id = imp.client_id
+    period = imp.period
+
+    db.delete(imp)
+    db.commit()
+
+    # 3. Re-sincronizar monthly_reports y KPIs si esta importación aportaba métricas
+    if period and client_id:
+        try:
+            from app.services.normalizer.normalizer_service import sync_monthly_report_and_kpis
+            sync_monthly_report_and_kpis(db, client_id, period)
+        except Exception:
+            pass
+
+    log_audit_action(
+        db,
+        username=get_username(admin),
+        action="IMPORT_DELETED",
+        resource_type="import",
+        resource_id=str(import_id),
+        details={"filename": filename, "client_id": client_id}
+    )
+
+    return {"detail": "Importación eliminada correctamente", "id": import_id}
 

@@ -361,7 +361,16 @@ select.client-select {
       <button class="btn btn-secondary btn-sm" onclick="navToPage('dashboard')">
         <i class="fas fa-arrow-left"></i> Volver al Dashboard Global RC506
       </button>
-      <div id="individualClientHeaderTitle" style="font-weight:700; color:#00695c; font-size:1.05rem;"></div>
+      <div style="display:flex;align-items:center;gap:12px;">
+        <div id="individualClientHeaderTitle" style="font-weight:700; color:#00695c; font-size:1.05rem;"></div>
+        <div style="display:flex;align-items:center;gap:8px;">
+          <span style="font-size:0.8rem;color:#64748b;font-weight:600;">Período:</span>
+          <select id="individualPeriodSelect" class="btn btn-secondary" style="padding:4px 10px;font-size:0.85rem;" onchange="onIndividualPeriodChange()">
+            <option value="">Todos los períodos</option>
+          </select>
+          <span id="individualDataBadge" class="badge badge-green" style="display:none;"><i class="fas fa-check-circle"></i> ● Datos cargados</span>
+        </div>
+      </div>
     </div>
 
     <div class="kpi-grid" id="dashKpis">
@@ -556,7 +565,10 @@ select.client-select {
     <div class="card">
       <div class="card-title" style="justify-content:space-between;">
         <span><i class="fas fa-history"></i> Historial de Ingestas & Almacenamiento RAW</span>
-        <button class="btn btn-secondary btn-sm" onclick="loadImportsHistory()"><i class="fas fa-sync-alt"></i> Actualizar</button>
+        <div style="display:flex;gap:8px;">
+          <button class="btn btn-secondary btn-sm" onclick="loadImportsHistory()"><i class="fas fa-sync-alt"></i> Actualizar</button>
+          <button class="btn btn-warning btn-sm" onclick="cleanupDuplicateImports()"><i class="fas fa-trash-alt"></i> Limpiar duplicados</button>
+        </div>
       </div>
       <div class="table-wrap">
         <table>
@@ -1531,16 +1543,18 @@ async function loadImportsHistory() {
     return;
   }
 
+  const isSuperAdmin = (typeof USER_ROLE !== 'undefined' && USER_ROLE === 'superadmin');
+
   tbody.innerHTML = imports.map(imp => {
     let badgeClass = 'badge-green';
     if (imp.status === 'VALID_WITH_WARNINGS' || imp.status === 'PROCESSED_WITH_WARNINGS') badgeClass = 'badge-yellow';
     else if (imp.status === 'INVALID') badgeClass = 'badge-red';
     else if (imp.status === 'DUPLICATE') badgeClass = 'badge-gray';
 
-    const shortHash = imp.file_hash.substring(0, 10) + '...';
-    const sizeKb = (imp.file_size / 1024).toFixed(1) + ' KB';
-
+    const shortHash = imp.file_hash ? (imp.file_hash.substring(0, 10) + '...') : '—';
+    const sizeKb = imp.file_size ? ((imp.file_size / 1024).toFixed(1) + ' KB') : '0 KB';
     const isProcessed = imp.status.startsWith('PROCESSED');
+    const canProcess = imp.status === 'VALID' || imp.status === 'VALID_WITH_WARNINGS';
 
     return `
       <tr>
@@ -1553,29 +1567,94 @@ async function loadImportsHistory() {
         <td><code style="font-size:0.75rem;" title="${imp.file_hash}">${shortHash}</code></td>
         <td>${imp.records_count} reg (${sizeKb})</td>
         <td><span class="badge ${badgeClass}">${imp.status}</span></td>
-        <td style="display:flex;gap:4px;">
-          <button class="btn btn-sm btn-secondary btn-icon" onclick="viewImportPreview(${imp.id})" title="Ver Preview RAW & Estructura">
-            <i class="fas fa-eye"></i>
-          </button>
-          <button class="btn btn-sm btn-primary btn-icon" onclick="processImport(${imp.id})" title="${isProcessed ? 'Reprocesar RAW' : 'Normalizar Registros'}">
-            <i class="fas fa-cog"></i>
-          </button>
-          ${isProcessed ? `
-            <button class="btn btn-sm btn-secondary btn-icon" onclick="viewNormalizedSummary(${imp.id})" title="Ver Métricas Base Operations">
-              <i class="fas fa-chart-bar"></i>
+        <td>
+          <div style="display:flex;gap:4px;align-items:center;">
+            <button class="btn btn-sm btn-secondary btn-icon" onclick="viewImportPreview(${imp.id})" title="👁 Ver Preview RAW & Estructura">
+              <i class="fas fa-eye"></i>
             </button>
-          ` : ''}
+            ${canProcess ? `
+              <button class="btn btn-sm btn-primary" id="btn-proc-${imp.id}" onclick="processImportWithFeedback(${imp.id})" title="▶ Procesar y sincronizar métricas al dashboard" style="padding:4px 8px;font-size:0.75rem;">
+                <i class="fas fa-play"></i> Procesar
+              </button>
+            ` : (isProcessed ? `
+              <button class="btn btn-sm btn-secondary btn-icon" onclick="viewNormalizedSummary(${imp.id})" title="Ver Métricas Base">
+                <i class="fas fa-chart-bar"></i>
+              </button>
+            ` : '')}
+            ${isSuperAdmin ? `
+              <button class="btn btn-sm btn-danger btn-icon" onclick="deleteImport(${imp.id})" title="🗑 Eliminar ingesta">
+                <i class="fas fa-trash"></i>
+              </button>
+            ` : ''}
+          </div>
         </td>
       </tr>
     `;
   }).join('');
 }
 
+async function processImportWithFeedback(importId) {
+  const btn = document.getElementById(`btn-proc-${importId}`);
+  if (btn) {
+    btn.disabled = true;
+    btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Procesando...';
+  }
+
+  showToast('🔄 Procesando archivo y sincronizando métricas...');
+
+  try {
+    const res = await apiFetch(`/api/admin/imports/${importId}/process`, { method: 'POST' });
+    if (!res.ok) {
+      const err = await res.json();
+      showToast('❌ Error al procesar: ' + (err.detail || 'Error interno'), 'error');
+      if (btn) {
+        btn.disabled = false;
+        btn.innerHTML = '<i class="fas fa-play"></i> Procesar';
+      }
+      return;
+    }
+    showToast('✅ Procesado — métricas sincronizadas al dashboard');
+    await loadImportsHistory();
+    if (typeof loadDashboard === 'function') loadDashboard();
+  } catch (e) {
+    showToast('❌ Error de conexión al procesar', 'error');
+    if (btn) {
+      btn.disabled = false;
+      btn.innerHTML = '<i class="fas fa-play"></i> Procesar';
+    }
+  }
+}
+
 async function processImport(importId) {
-  showToast('🔄 Procesando y normalizando registros...');
-  const res = await apiFetch(`/api/admin/imports/${importId}/process`, { method: 'POST' });
+  return processImportWithFeedback(importId);
+}
+
+async function deleteImport(importId) {
+  if (!confirm('¿Está seguro de eliminar este registro de ingesta? Esta acción eliminará el archivo fuente y sus registros normalizados.')) {
+    return;
+  }
+  const res = await apiFetch(`/api/admin/imports/${importId}`, { method: 'DELETE' });
   if (!res.ok) {
     const err = await res.json();
+    return showToast('❌ Error al eliminar: ' + (err.detail || 'Permiso denegado'), 'error');
+  }
+  showToast('✅ Importación eliminada correctamente');
+  loadImportsHistory();
+}
+
+async function cleanupDuplicateImports() {
+  if (!confirm('¿Desea eliminar todos los registros de ingesta marcados como DUPLICATE?')) {
+    return;
+  }
+  const res = await apiFetch('/api/admin/imports/duplicates', { method: 'DELETE' });
+  if (!res.ok) {
+    const err = await res.json();
+    return showToast('❌ Error al limpiar duplicados: ' + (err.detail || 'Permiso denegado'), 'error');
+  }
+  const data = await res.json();
+  showToast('✅ ' + (data.detail || 'Registros duplicados eliminados correctamente'));
+  loadImportsHistory();
+}
     return showToast('❌ Error al normalizar: ' + (err.detail || 'Error interno'), 'error');
   }
   const summary = await res.json();
@@ -1758,6 +1837,26 @@ async function loadDashboard() {
   const reports = await res.json();
   const dashKpis = document.getElementById('dashKpis');
   const dashCharts = document.getElementById('dashCharts');
+
+  const periodSel = document.getElementById('individualPeriodSelect');
+  const periodBadge = document.getElementById('individualDataBadge');
+
+  if (periodSel) {
+    let optionsHTML = '<option value="">Todos los períodos</option>';
+    reports.forEach(r => {
+      const pStr = `${r.year}-${String(r.month).padStart(2, '0')}`;
+      optionsHTML += `<option value="${pStr}">${r.month_name || pStr} ${r.year} ● Datos cargados</option>`;
+    });
+    periodSel.innerHTML = optionsHTML;
+  }
+
+  if (periodBadge) {
+    if (reports.length > 0) {
+      periodBadge.style.display = 'inline-flex';
+    } else {
+      periodBadge.style.display = 'none';
+    }
+  }
   
   if (!reports.length) {
     dashKpis.innerHTML = '<div class="empty-state" style="grid-column:1/-1;"><i class="fas fa-chart-pie"></i><h3>Sin datos reportados</h3><p>Agrega los primeros reportes mensuales para este cliente.</p></div>';
