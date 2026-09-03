@@ -369,6 +369,7 @@ select.client-select {
             <option value="">Todos los períodos</option>
           </select>
           <span id="individualDataBadge" class="badge badge-green" style="display:none;"><i class="fas fa-check-circle"></i> ● Datos cargados</span>
+          <button class="btn btn-primary btn-sm" onclick="openPresentationModal()"><i class="fas fa-file-powerpoint"></i> 📊 Generar Presentación</button>
         </div>
       </div>
     </div>
@@ -1215,6 +1216,71 @@ select.client-select {
       <button class="btn btn-primary" id="saveUserBtn" onclick="saveUser()"><i class="fas fa-save"></i> Guardar Usuario</button>
     </div>
     <input type="hidden" id="u-id">
+  </div>
+</div>
+
+<!-- Modal: Generar Presentación PPTX (Fase 07) -->
+<div class="modal-overlay" id="presentationModal">
+  <div class="modal" style="max-width:520px;">
+    <div class="modal-header">
+      <div class="modal-title"><i class="fas fa-file-powerpoint" style="color:#d97706;"></i> 📊 Generar Presentación PPTX</div>
+      <button class="modal-close" onclick="closeModal('presentationModal')">✕</button>
+    </div>
+
+    <div class="form-section">
+      <div class="form-section-title">🎨 Tema de Color</div>
+      <div style="display:flex;gap:8px;flex-wrap:wrap;">
+        <label style="display:flex;align-items:center;gap:6px;cursor:pointer;background:#f0fdf4;padding:6px 10px;border-radius:8px;border:1px solid #00897b;font-size:0.85rem;">
+          <input type="radio" name="pptx-theme" value="teal" checked> ● Teal (RC506)
+        </label>
+        <label style="display:flex;align-items:center;gap:6px;cursor:pointer;background:#eff6ff;padding:6px 10px;border-radius:8px;border:1px solid #1e88e5;font-size:0.85rem;">
+          <input type="radio" name="pptx-theme" value="blue"> ○ Blue (Ejecutivo)
+        </label>
+        <label style="display:flex;align-items:center;gap:6px;cursor:pointer;background:#faf5ff;padding:6px 10px;border-radius:8px;border:1px solid #8e24aa;font-size:0.85rem;">
+          <input type="radio" name="pptx-theme" value="purple"> ○ Purple (Premium)
+        </label>
+        <label style="display:flex;align-items:center;gap:6px;cursor:pointer;background:#fffbeb;padding:6px 10px;border-radius:8px;border:1px solid #d97706;font-size:0.85rem;">
+          <input type="radio" name="pptx-theme" value="amber"> ○ Amber (Cálido)
+        </label>
+        <label style="display:flex;align-items:center;gap:6px;cursor:pointer;background:#fff1f2;padding:6px 10px;border-radius:8px;border:1px solid #e11d48;font-size:0.85rem;">
+          <input type="radio" name="pptx-theme" value="rose"> ○ Rose (Moderno)
+        </label>
+      </div>
+    </div>
+
+    <div class="form-section">
+      <div class="form-section-title">🔢 Número de Slides</div>
+      <div style="display:flex;gap:8px;">
+        <button type="button" class="btn btn-secondary slide-num-btn" onclick="selectSlideNum(3)">3 Slides</button>
+        <button type="button" class="btn btn-secondary slide-num-btn" onclick="selectSlideNum(4)">4 Slides</button>
+        <button type="button" class="btn btn-primary slide-num-btn" id="slide-btn-5" onclick="selectSlideNum(5)">5 Slides</button>
+        <button type="button" class="btn btn-secondary slide-num-btn" onclick="selectSlideNum(6)">6 Slides</button>
+      </div>
+      <input type="hidden" id="pptx-num-slides" value="5">
+    </div>
+
+    <div class="form-section">
+      <div class="form-section-title">📅 Período de Reporte</div>
+      <select id="pptx-period" class="btn btn-secondary" style="width:100%;padding:8px 12px;">
+        <option value="2026-09">Septiembre 2026</option>
+        <option value="2026-08">Agosto 2026</option>
+      </select>
+    </div>
+
+    <div class="form-section">
+      <div class="form-section-title">📌 Contenido a Incluir</div>
+      <div style="display:flex;flex-direction:column;gap:8px;font-size:0.9rem;">
+        <label><input type="checkbox" id="pptx-sec-resumen" checked value="resumen"> ☑ Resumen General de Métricas</label>
+        <label><input type="checkbox" id="pptx-sec-eficiencia" checked value="eficiencia"> ☑ Métricas Operativas (Botmaker / Yeastar)</label>
+        <label><input type="checkbox" id="pptx-sec-qualitative" checked value="qualitative"> ☑ Análisis Cualitativo (4 Tarjetas)</label>
+        <label><input type="checkbox" id="pptx-sec-kpis" value="kpis"> ☐ KPIs Configurados</label>
+      </div>
+    </div>
+
+    <div class="modal-footer">
+      <button class="btn btn-secondary" onclick="closeModal('presentationModal')">Cancelar</button>
+      <button class="btn btn-primary" id="downloadPptxBtn" onclick="downloadPresentation()"><i class="fas fa-download"></i> ⬇ Descargar PPTX</button>
+    </div>
   </div>
 </div>
 
@@ -2541,6 +2607,85 @@ async function deleteReport(id) {
   if (!confirm('¿Eliminar este reporte mensual?')) return;
   const res = await apiFetch(`/api/clients/${currentClientId}/reports/${id}`, { method: 'DELETE' });
   if (res.ok || res.status === 204) { loadReports(); loadDashboard(); showToast('🗑️ Reporte eliminado'); }
+}
+
+// ── Modo Presentación PPTX (Fase 07) ──────────────────
+function openPresentationModal() {
+  if (!currentClientId) return showToast('⚠️ Selecciona un cliente primero', 'warn');
+  const periodSel = document.getElementById('pptx-period');
+  if (periodSel) {
+    const sel = document.getElementById('individualPeriodSelect');
+    if (sel && sel.options.length > 1) {
+      let opts = '';
+      for (let i = 1; i < sel.options.length; i++) {
+        opts += `<option value="${sel.options[i].value}">${sel.options[i].text}</option>`;
+      }
+      periodSel.innerHTML = opts;
+    }
+  }
+  openModal('presentationModal');
+}
+
+function selectSlideNum(num) {
+  document.getElementById('pptx-num-slides').value = num;
+  document.querySelectorAll('.slide-num-btn').forEach(btn => {
+    btn.classList.remove('btn-primary');
+    btn.classList.add('btn-secondary');
+  });
+  if (window.event && window.event.target) {
+    window.event.target.classList.remove('btn-secondary');
+    window.event.target.classList.add('btn-primary');
+  }
+}
+
+async function downloadPresentation() {
+  if (!currentClientId) return showToast('⚠️ Selecciona un cliente primero', 'warn');
+  const btn = document.getElementById('downloadPptxBtn');
+  btn.disabled = true;
+  btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Generando PPTX...';
+
+  const theme = document.querySelector('input[name="pptx-theme"]:checked')?.value || 'teal';
+  const num_slides = +document.getElementById('pptx-num-slides').value || 5;
+  const period = document.getElementById('pptx-period').value || '2026-09';
+
+  const sections = [];
+  if (document.getElementById('pptx-sec-resumen')?.checked) sections.push('resumen');
+  if (document.getElementById('pptx-sec-eficiencia')?.checked) sections.push('eficiencia');
+  if (document.getElementById('pptx-sec-qualitative')?.checked) sections.push('qualitative');
+  if (document.getElementById('pptx-sec-kpis')?.checked) sections.push('kpis');
+
+  try {
+    const res = await apiFetch(`/api/admin/clients/${currentClientId}/presentation`, {
+      method: 'POST',
+      body: JSON.stringify({ period, theme, num_slides, sections })
+    });
+
+    if (!res.ok) {
+      const err = await res.json();
+      showToast('❌ Error al generar presentación: ' + (err.detail || 'Error interno'), 'error');
+      btn.disabled = false;
+      btn.innerHTML = '<i class="fas fa-download"></i> ⬇ Descargar PPTX';
+      return;
+    }
+
+    const blob = await res.blob();
+    const url = window.URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `Reporte_${period}.pptx`;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    window.URL.revokeObjectURL(url);
+
+    closeModal('presentationModal');
+    showToast('📊 Presentación PowerPoint descargada correctamente');
+  } catch (e) {
+    showToast('❌ Error de conexión al generar PPTX', 'error');
+  } finally {
+    btn.disabled = false;
+    btn.innerHTML = '<i class="fas fa-download"></i> ⬇ Descargar PPTX';
+  }
 }
 
 // ── Links page ───────────────────────────────────────

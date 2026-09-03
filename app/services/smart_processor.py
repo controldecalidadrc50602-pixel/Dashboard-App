@@ -34,11 +34,9 @@ def find_header_row(raw_rows: List[List[str]]) -> Tuple[int, List[str], List[Lis
         if not row_str or set(row_str) <= {"-", "=", "#", "*"}:
             continue
 
-        # Si es una fila descriptiva/leyenda
         if is_description_row(row, headers):
             continue
 
-        # Evaluar candidato
         clean_row = [str(c).strip() for c in row]
         non_empty = [c for c in clean_row if c]
         if len(non_empty) > len(headers):
@@ -62,14 +60,7 @@ def find_header_row(raw_rows: List[List[str]]) -> Tuple[int, List[str], List[Lis
 
 
 def discover_schema(headers: List[str], rows: List[List[str]]) -> Dict[str, Dict[str, Any]]:
-    """
-    Descubre automáticamente el tipo de dato de cada columna:
-    - categorical (pocos valores únicos / baja variabilidad)
-    - numeric (valores parseables a float)
-    - temporal (fechas / timestamps)
-    - id (UUIDs, links, cadenas únicas largas)
-    - text (texto libre)
-    """
+    """Descubre el tipo de dato de cada columna automáticamente."""
     schema: Dict[str, Dict[str, Any]] = {}
     total_rows = len(rows)
 
@@ -140,7 +131,7 @@ def discover_schema(headers: List[str], rows: List[List[str]]) -> Dict[str, Dict
             }
             continue
 
-        # 3. Chequeo ID (UUIDs, URLs, IDs únicos largos)
+        # 3. Chequeo ID
         sample_str = values[0]
         if unique_ratio >= 0.7 and (len(sample_str) > 15 or "http" in sample_str or "-" in sample_str and len(sample_str) > 10):
             schema[clean_name] = {
@@ -164,7 +155,6 @@ def discover_schema(headers: List[str], rows: List[List[str]]) -> Dict[str, Dict
             }
             continue
 
-        # 5. Texto por defecto
         schema[clean_name] = {
             "index": col_idx,
             "type": "text",
@@ -176,11 +166,8 @@ def discover_schema(headers: List[str], rows: List[List[str]]) -> Dict[str, Dict
     return schema
 
 
-def extract_metrics(headers: List[str], rows: List[List[str]], schema: Dict[str, Dict[str, Any]]) -> Dict[str, Any]:
-    """
-    Busca semánticamente columnas clave por palabras clave normalizadas e idioma agnóstico.
-    Extrae métricas operativas (agentes, mensajes, plantillas, llamadas).
-    """
+def extract_metrics(headers: List[str], rows: List[List[str]], schema: Optional[Dict[str, Dict[str, Any]]] = None) -> Dict[str, Any]:
+    """Extrae métricas operativas por palabras clave normalizadas."""
     col_map: Dict[str, int] = {}
     norm_headers = [_normalize_str(h) for h in headers]
 
@@ -226,7 +213,6 @@ def extract_metrics(headers: List[str], rows: List[List[str]], schema: Dict[str,
     answered_calls = 0
 
     for r in rows:
-        # Agente habló
         if "agente_hablo" in col_map:
             idx = col_map["agente_hablo"]
             val = r[idx].lower() if idx < len(r) else ""
@@ -235,7 +221,6 @@ def extract_metrics(headers: List[str], rows: List[List[str]], schema: Dict[str,
             else:
                 conversations_bot_only += 1
 
-        # Mensajes
         if "user_messages" in col_map:
             try: total_messages_user += int(r[col_map["user_messages"]])
             except (ValueError, IndexError): pass
@@ -246,7 +231,6 @@ def extract_metrics(headers: List[str], rows: List[List[str]], schema: Dict[str,
             try: total_messages_agent += int(r[col_map["agent_messages"]])
             except (ValueError, IndexError): pass
 
-        # Plantillas
         if "template_sent" in col_map:
             try: total_templates_sent += int(r[col_map["template_sent"]])
             except (ValueError, IndexError): pass
@@ -263,7 +247,6 @@ def extract_metrics(headers: List[str], rows: List[List[str]], schema: Dict[str,
             try: total_templates_not_sent += int(r[col_map["template_not_sent"]])
             except (ValueError, IndexError): pass
 
-        # Llamadas
         if "total_calls" in col_map:
             try: total_calls += int(r[col_map["total_calls"]])
             except (ValueError, IndexError): pass
@@ -271,7 +254,6 @@ def extract_metrics(headers: List[str], rows: List[List[str]], schema: Dict[str,
             try: answered_calls += int(r[col_map["answered_calls"]])
             except (ValueError, IndexError): pass
 
-    # Fallback si no había columna booleana explicita "habló el agente"
     if "agente_hablo" not in col_map:
         if total_messages_agent > 0:
             conversations_with_agent = total_conversations
@@ -298,11 +280,7 @@ def extract_metrics(headers: List[str], rows: List[List[str]], schema: Dict[str,
 
 
 def detect_anomalies(headers: List[str], rows: List[List[str]], schema: Dict[str, Dict[str, Any]]) -> List[Dict[str, Any]]:
-    """
-    Detecta anomalías en columnas numéricas utilizando la puntuación Z-Score.
-    - Z-Score > 3.0 -> severidad ALTA
-    - Z-Score > 2.0 -> severidad MEDIA
-    """
+    """Detecta anomalías con puntuación Z-Score."""
     anomalies: List[Dict[str, Any]] = []
 
     for col_name, meta in schema.items():
@@ -345,11 +323,7 @@ def detect_anomalies(headers: List[str], rows: List[List[str]], schema: Dict[str
 
 
 def process_smart_tsv(content: bytes, filename: str) -> Dict[str, Any]:
-    """
-    Procesa un archivo TSV/CSV/Excel mediante Inteligencia Estructural.
-    Combina detección de codificación, separadores, cabecera inteligente, schema discovery,
-    extracción universal de métricas y detección de anomalías Z-Score.
-    """
+    """Flujo completo de procesamiento de archivos."""
     ext = filename.lower().split(".")[-1] if "." in filename else "tsv"
 
     raw_rows: List[List[str]] = []
@@ -400,6 +374,7 @@ def process_smart_tsv(content: bytes, filename: str) -> Dict[str, Any]:
         "headers": headers,
         "total_rows": len(data_rows),
         "sample_rows": data_rows[:10],
+        "preview_rows": data_rows[:10],
         "period": period,
         "report_type": report_type,
         "schema": schema,
@@ -408,3 +383,24 @@ def process_smart_tsv(content: bytes, filename: str) -> Dict[str, Any]:
         "warnings": warnings,
         "errors": []
     }
+
+
+class SmartProcessor:
+    """Clase envolvente para consumo POO según especificación Fase 07."""
+    def normalize(self, text: str) -> str:
+        return _normalize_str(text)
+
+    def find_real_header_row(self, raw_rows: List[List[str]]) -> Tuple[int, List[str], List[List[str]]]:
+        return find_header_row(raw_rows)
+
+    def discover_schema(self, headers: List[str], rows: List[List[str]]) -> Dict[str, Dict[str, Any]]:
+        return discover_schema(headers, rows)
+
+    def extract_metrics(self, headers: List[str], rows: List[List[str]]) -> Dict[str, Any]:
+        return extract_metrics(headers, rows)
+
+    def detect_anomalies(self, headers: List[str], rows: List[List[str]], schema: Dict[str, Dict[str, Any]]) -> List[Dict[str, Any]]:
+        return detect_anomalies(headers, rows, schema)
+
+    def process_file(self, file_content: bytes, filename: str) -> Dict[str, Any]:
+        return process_smart_tsv(file_content, filename)
