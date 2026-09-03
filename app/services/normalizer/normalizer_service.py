@@ -287,7 +287,8 @@ def sync_monthly_report_and_kpis(db: Session, client_id: int, period: str):
     all_response_times = []
 
     for imp in imports:
-        calc_m = (imp.metadata_info or {}).get("calculated_metrics", {})
+        meta = imp.metadata_info or {}
+        calc_m = meta.get("calculated_metrics") or meta.get("metrics") or {}
         if not calc_m:
             continue
 

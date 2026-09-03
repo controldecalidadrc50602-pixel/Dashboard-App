@@ -63,15 +63,6 @@ def validate_import_structure(
         })
         return "INVALID", warnings, errors
 
-    # 2. Validación de Yeastar (Requiere muestra real)
-    if source_code == "yeastar":
-        warnings.append({
-            "row": 0,
-            "field": "schema",
-            "message": "Estructura Yeastar: NO VERIFICADO — REQUIERE ARCHIVO DE MUESTRA para validación completa de columnas.",
-            "severity": "WARNING"
-        })
-
     # 3. Validación de Botmaker (Bilingüe Español / Inglés)
     elif source_code == "botmaker":
         clusters = BOTMAKER_EXPECTED_CLUSTERS.get(report_type, [])
@@ -89,6 +80,10 @@ def validate_import_structure(
                     "message": f"Columnas clave no detectadas en reporte '{report_type}': {', '.join(missing_labels)}",
                     "severity": "WARNING"
                 })
+
+    # Incorporar advertencias pre-existentes de SmartProcessor (p. ej. anomalías Z-Score)
+    for w in metadata_info.get("warnings", []):
+        warnings.append(w)
 
     # 4. Validación Fila por Fila (Garantizar NO pérdida silenciosa de datos)
     expected_col_count = len(headers)

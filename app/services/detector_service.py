@@ -103,60 +103,10 @@ def detect_botmaker_report_type(headers: List[str], filename: str = "") -> str:
 
 def analyze_file_content(content: bytes, filename: str) -> Dict[str, Any]:
     """
-    Analiza el archivo RAW y extrae metadata estructural:
-    encoding, delimitador, formato, encabezados, muestras de filas y período preliminar.
+    Analiza el archivo RAW utilizando SmartProcessor (Schema Discovery, Métricas Universales y Detección de Cabeceras).
     """
-    ext = filename.lower().split(".")[-1] if "." in filename else "txt"
-
-    if ext in ["xlsx", "xls"]:
-        return analyze_excel_content(content, filename)
-    
-    encoding = detect_encoding(content)
-    text = content.decode(encoding, errors="replace")
-    delimiter = detect_delimiter(text, filename)
-    
-    lines = [l for l in text.splitlines() if l.strip()]
-    if not lines:
-        return {
-            "format": ext,
-            "encoding": encoding,
-            "delimiter": delimiter,
-            "headers": [],
-            "sample_rows": [],
-            "total_rows": 0,
-            "period": extract_period_from_filename(filename) or "requiere_confirmacion",
-            "report_type": "generic"
-        }
-
-    reader = csv.reader(lines, delimiter=delimiter)
-    all_rows = list(reader)
-
-    headers = all_rows[0] if all_rows else []
-    
-    # Filtrar fila 2 si es encabezado secundario de descripciones (operatorsSessionsDebug)
-    data_rows = all_rows[1:]
-    has_description_header = False
-    if data_rows and is_description_row(data_rows[0], headers):
-        data_rows = data_rows[1:]
-        has_description_header = True
-
-    sample_rows = data_rows[:10] if data_rows else []
-    total_rows = len(data_rows)
-
-    period = extract_period_from_filename(filename) or "requiere_confirmacion"
-    report_type = detect_botmaker_report_type(headers, filename)
-
-    return {
-        "format": ext,
-        "encoding": encoding,
-        "delimiter": "\\t" if delimiter == "\t" else delimiter,
-        "headers": headers,
-        "sample_rows": sample_rows,
-        "total_rows": total_rows,
-        "period": period,
-        "report_type": report_type,
-        "has_description_header": has_description_header
-    }
+    from app.services.smart_processor import process_smart_tsv
+    return process_smart_tsv(content, filename)
 
 
 def analyze_excel_content(content: bytes, filename: str) -> Dict[str, Any]:
