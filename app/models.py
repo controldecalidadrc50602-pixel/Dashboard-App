@@ -17,6 +17,24 @@ class Client(Base):
     # Lista de módulos KPI activos para este cliente.
     kpi_modules = Column(JSON, default=lambda: ["chat_sales", "appointments", "calls", "quality_kidoz"])
 
+    # Ficha Técnica Integral del Cliente (Fase 06A)
+    contact_name = Column(String, nullable=True)
+    contact_email = Column(String, nullable=True)
+    contact_phone = Column(String, nullable=True)
+    industry = Column(String, nullable=True)
+    country = Column(String, default="Costa Rica")
+
+    # Infraestructura Omnicanal & Telefonía
+    has_botmaker = Column(Boolean, default=False)
+    botmaker_channel_id = Column(String, nullable=True)
+    has_yeastar = Column(Boolean, default=False)
+    yeastar_pbx_ip = Column(String, nullable=True)
+    yeastar_extensions_count = Column(Integer, default=0)
+    sla_target_minutes = Column(Float, default=5.0)
+
+    technical_notes = Column(Text, nullable=True)
+    platform_metadata = Column(JSON, default=dict)
+
     reports = relationship("MonthlyReport", back_populates="client", cascade="all, delete-orphan")
     public_views = relationship("PublicView", back_populates="client", cascade="all, delete-orphan")
     kpi_configs = relationship("KPIConfig", back_populates="client", cascade="all, delete-orphan")

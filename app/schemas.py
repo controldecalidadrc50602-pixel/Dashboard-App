@@ -24,6 +24,19 @@ class ClientCreate(BaseModel):
     color: str = "#009688"
     logo_text: str = "RC"
     kpi_modules: List[str] = ["chat_sales", "appointments", "calls", "quality_kidoz"]
+    contact_name: Optional[str] = None
+    contact_email: Optional[str] = None
+    contact_phone: Optional[str] = None
+    industry: Optional[str] = None
+    country: Optional[str] = "Costa Rica"
+    has_botmaker: bool = False
+    botmaker_channel_id: Optional[str] = None
+    has_yeastar: bool = False
+    yeastar_pbx_ip: Optional[str] = None
+    yeastar_extensions_count: int = 0
+    sla_target_minutes: float = 5.0
+    technical_notes: Optional[str] = None
+    platform_metadata: Optional[Dict[str, Any]] = None
 
 class ClientUpdate(BaseModel):
     name: Optional[str] = None
@@ -32,15 +45,41 @@ class ClientUpdate(BaseModel):
     logo_text: Optional[str] = None
     is_active: Optional[bool] = None
     kpi_modules: Optional[List[str]] = None
+    contact_name: Optional[str] = None
+    contact_email: Optional[str] = None
+    contact_phone: Optional[str] = None
+    industry: Optional[str] = None
+    country: Optional[str] = None
+    has_botmaker: Optional[bool] = None
+    botmaker_channel_id: Optional[str] = None
+    has_yeastar: Optional[bool] = None
+    yeastar_pbx_ip: Optional[str] = None
+    yeastar_extensions_count: Optional[int] = None
+    sla_target_minutes: Optional[float] = None
+    technical_notes: Optional[str] = None
+    platform_metadata: Optional[Dict[str, Any]] = None
 
 class ClientOut(BaseModel):
     id: int
     name: str
-    description: Optional[str]
+    description: Optional[str] = None
     color: str
     logo_text: str
     is_active: bool
     kpi_modules: Optional[List[str]] = ["chat_sales", "appointments", "calls", "quality_kidoz"]
+    contact_name: Optional[str] = None
+    contact_email: Optional[str] = None
+    contact_phone: Optional[str] = None
+    industry: Optional[str] = None
+    country: Optional[str] = "Costa Rica"
+    has_botmaker: bool = False
+    botmaker_channel_id: Optional[str] = None
+    has_yeastar: bool = False
+    yeastar_pbx_ip: Optional[str] = None
+    yeastar_extensions_count: int = 0
+    sla_target_minutes: float = 5.0
+    technical_notes: Optional[str] = None
+    platform_metadata: Optional[Dict[str, Any]] = None
     created_at: datetime
     class Config:
         from_attributes = True
