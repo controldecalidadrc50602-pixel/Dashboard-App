@@ -10,7 +10,7 @@ load_dotenv()
 
 from app.database import Base, engine, SessionLocal
 import app.models
-from app.routers import auth, clients, reports, public, dashboard_global, imports, kpis, analysis, users
+from app.routers import auth, clients, reports, public, dashboard_global, imports, kpis, analysis, users, qualitative
 from app.dependencies import seed_default_users
 
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -58,6 +58,7 @@ app.include_router(imports.router)
 app.include_router(kpis.router)
 app.include_router(analysis.router)
 app.include_router(users.router)
+app.include_router(qualitative.router)
 
 
 

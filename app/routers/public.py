@@ -4,7 +4,7 @@ from typing import List
 from datetime import datetime
 import uuid
 from app.database import get_db
-from app.models import PublicView, MonthlyReport, Client
+from app.models import PublicView, MonthlyReport, Client, ReportQualitativeAnalysis
 from app.schemas import PublicViewCreate, PublicViewOut
 from app.auth import hash_password, verify_password
 from app.dependencies import get_current_user
@@ -107,11 +107,24 @@ def get_public_data(token: str, password: str = None, db: Session = Depends(get_
         d["month_name"] = MONTH_NAMES[r.month] if 1 <= r.month <= 12 else str(r.month)
         reports_data.append(d)
 
+    # Obtener análisis cualitativos del cliente
+    qualitative_objs = db.query(ReportQualitativeAnalysis).filter(ReportQualitativeAnalysis.client_id == view.client_id).all()
+    qualitative_data = {
+        q.period: {
+            "critical_points": q.critical_points,
+            "warnings": q.warnings,
+            "achievements": q.achievements,
+            "general_info": q.general_info,
+            "updated_at": q.updated_at.isoformat() if q.updated_at else None
+        } for q in qualitative_objs
+    }
+
     return {
         "title": view.title,
         "description": view.description,
         "visible_sections": view.visible_sections,
         "client": {"name": client.name, "color": client.color, "logo_text": client.logo_text, "kpi_modules": client.kpi_modules},
         "reports": reports_data,
+        "qualitative_analyses": qualitative_data,
         "generated_at": datetime.utcnow().isoformat()
     }

@@ -428,5 +428,35 @@ class AnalysisInsightOut(BaseModel):
         from_attributes = True
 
 
+# ──────────────────────────────────────────────
+# Report Qualitative Analysis (Fase 06C)
+# ──────────────────────────────────────────────
+class QualitativeAnalysisCreate(BaseModel):
+    critical_points: Optional[str] = None
+    warnings: Optional[str] = None
+    achievements: Optional[str] = None
+    general_info: Optional[str] = None
+
+class QualitativeAnalysisUpdate(BaseModel):
+    critical_points: Optional[str] = None
+    warnings: Optional[str] = None
+    achievements: Optional[str] = None
+    general_info: Optional[str] = None
+
+class QualitativeAnalysisOut(BaseModel):
+    id: int
+    client_id: int
+    period: str
+    critical_points: Optional[str] = None
+    warnings: Optional[str] = None
+    achievements: Optional[str] = None
+    general_info: Optional[str] = None
+    created_by: Optional[str] = None
+    updated_at: datetime
+    created_at: datetime
+    class Config:
+        from_attributes = True
+
+
 
 

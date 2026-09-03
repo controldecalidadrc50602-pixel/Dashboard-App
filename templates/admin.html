@@ -374,6 +374,60 @@ select.client-select {
     <div class="charts-grid" id="dashCharts">
       <!-- Inyectado dinámicamente según módulos del cliente -->
     </div>
+
+    <!-- ── BLOQUE: ANÁLISIS CUALITATIVO RC506 (Fase 06C) ── -->
+    <div class="card" style="margin-top:24px;">
+      <div class="card-title" style="justify-content:space-between;align-items:center;">
+        <span><i class="fas fa-brain" style="color:#009688;"></i> Análisis Cualitativo RC506</span>
+        <div style="display:flex;gap:12px;align-items:center;">
+          <span id="qa-last-updated" style="font-size:0.75rem;color:#64748b;font-weight:500;"></span>
+          <button class="btn btn-primary" id="btnSaveQualitative" onclick="saveQualitativeAnalysis()">
+            <i class="fas fa-save"></i> Guardar Análisis
+          </button>
+        </div>
+      </div>
+      <p style="color:#64748b;font-size:0.85rem;margin-bottom:20px;">
+        Evaluación cualitativa estructurada del período para este cliente (Puntos Críticos, Advertencias, Logros e Información General).
+      </p>
+
+      <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:16px;">
+        <!-- Puntos Críticos -->
+        <div style="background:#fef2f2;border:1px solid #fecaca;border-radius:16px;padding:16px;">
+          <div style="font-weight:700;color:#991b1b;margin-bottom:6px;display:flex;align-items:center;gap:8px;">
+            <span>🔴 PUNTOS CRÍTICOS</span>
+          </div>
+          <div style="font-size:0.75rem;color:#7f1d1d;margin-bottom:10px;">Situaciones que requieren acción inmediata</div>
+          <textarea id="qa-critical" rows="4" style="width:100%;border:1px solid #fca5a5;border-radius:10px;padding:10px;font-size:0.85rem;font-family:inherit;" placeholder="Ej: Caída recurrente en llamadas del 15 al 18..."></textarea>
+        </div>
+
+        <!-- Advertencias -->
+        <div style="background:#fffbeb;border:1px solid #fde68a;border-radius:16px;padding:16px;">
+          <div style="font-weight:700;color:#92400e;margin-bottom:6px;display:flex;align-items:center;gap:8px;">
+            <span>🟡 ADVERTENCIAS</span>
+          </div>
+          <div style="font-size:0.75rem;color:#78350f;margin-bottom:10px;">Tendencias a monitorear</div>
+          <textarea id="qa-warnings" rows="4" style="width:100%;border:1px solid #fcd34d;border-radius:10px;padding:10px;font-size:0.85rem;font-family:inherit;" placeholder="Ej: Aumento del 12% en tiempo de respuesta inicial..."></textarea>
+        </div>
+
+        <!-- Logros / Positivo -->
+        <div style="background:#f0fdf4;border:1px solid #bbf7d0;border-radius:16px;padding:16px;">
+          <div style="font-weight:700;color:#166534;margin-bottom:6px;display:flex;align-items:center;gap:8px;">
+            <span>🟢 LOGROS & ASPECTOS POSITIVOS</span>
+          </div>
+          <div style="font-size:0.75rem;color:#14532d;margin-bottom:10px;">Resultados destacados del período</div>
+          <textarea id="qa-achievements" rows="4" style="width:100%;border:1px solid #86efac;border-radius:10px;padding:10px;font-size:0.85rem;font-family:inherit;" placeholder="Ej: Meta de CSAT superada en 4.8 / 5.0..."></textarea>
+        </div>
+
+        <!-- Información General -->
+        <div style="background:#eff6ff;border:1px solid #bfdbfe;border-radius:16px;padding:16px;">
+          <div style="font-weight:700;color:#1e40af;margin-bottom:6px;display:flex;align-items:center;gap:8px;">
+            <span>🔵 INFORMACIÓN GENERAL</span>
+          </div>
+          <div style="font-size:0.75rem;color:#1e3a8a;margin-bottom:10px;">Contexto operativo relevante</div>
+          <textarea id="qa-general" rows="4" style="width:100%;border:1px solid #93c5fd;border-radius:10px;padding:10px;font-size:0.85rem;font-family:inherit;" placeholder="Ej: Campaña de fidelización lanzada la tercera semana..."></textarea>
+        </div>
+      </div>
+    </div>
   </div>
 
 
@@ -1797,6 +1851,8 @@ async function loadDashboard() {
       { label:'% Contacto', data: reports.map(r=>r.contact_rate), borderColor:'#10b981', yAxisID:'y1' }
     ], { y:{}, y1:{position:'right',min:70,max:100} });
   }
+
+  await loadQualitativeAnalysis();
 }
 
 function renderChart(id, type, labels, datasets, scales = {}) {
@@ -1807,6 +1863,77 @@ function renderChart(id, type, labels, datasets, scales = {}) {
     type, data: { labels, datasets },
     options: { responsive:true, maintainAspectRatio:true, scales }
   });
+}
+
+// ── Qualitative Analysis JS ─────────────────────────────────────
+let currentQualitativePeriod = null;
+
+async function loadQualitativeAnalysis() {
+  if (!currentClientId) return;
+  const isSuperadmin = USER_ROLE === 'superadmin';
+  const btnSave = document.getElementById('btnSaveQualitative');
+  if (btnSave) btnSave.style.display = isSuperadmin ? 'inline-flex' : 'none';
+
+  ['qa-critical', 'qa-warnings', 'qa-achievements', 'qa-general'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.readOnly = !isSuperadmin;
+  });
+
+  const now = new Date();
+  const year = now.getFullYear();
+  const month = String(now.getMonth() + 1).padStart(2, '0');
+  currentQualitativePeriod = `${year}-${month}`;
+
+  const res = await apiFetch(`/api/admin/clients/${currentClientId}/qualitative/${currentQualitativePeriod}`);
+  if (!res.ok) return;
+  const data = await res.json();
+
+  document.getElementById('qa-critical').value = data.critical_points || '';
+  document.getElementById('qa-warnings').value = data.warnings || '';
+  document.getElementById('qa-achievements').value = data.achievements || '';
+  document.getElementById('qa-general').value = data.general_info || '';
+
+  const lastUpdatedEl = document.getElementById('qa-last-updated');
+  if (lastUpdatedEl) {
+    if (data.updated_at && data.id) {
+      const dt = new Date(data.updated_at);
+      lastUpdatedEl.textContent = `Último guardado: ${dt.toLocaleTimeString('es')} (${dt.toLocaleDateString('es')})`;
+    } else {
+      lastUpdatedEl.textContent = 'Sin guardar aún';
+    }
+  }
+}
+
+async function saveQualitativeAnalysis() {
+  if (!currentClientId || !currentQualitativePeriod) return;
+  if (USER_ROLE !== 'superadmin') {
+    return showToast('🔒 Solo el Super Admin puede editar el análisis cualitativo', 'warn');
+  }
+
+  const body = {
+    critical_points: document.getElementById('qa-critical').value,
+    warnings: document.getElementById('qa-warnings').value,
+    achievements: document.getElementById('qa-achievements').value,
+    general_info: document.getElementById('qa-general').value
+  };
+
+  const res = await apiFetch(`/api/admin/clients/${currentClientId}/qualitative/${currentQualitativePeriod}`, {
+    method: 'POST',
+    body: JSON.stringify(body)
+  });
+
+  if (res.ok) {
+    const updated = await res.json();
+    showToast('✅ Análisis cualitativo guardado con éxito');
+    const lastUpdatedEl = document.getElementById('qa-last-updated');
+    if (lastUpdatedEl && updated.updated_at) {
+      const dt = new Date(updated.updated_at);
+      lastUpdatedEl.textContent = `Último guardado: ${dt.toLocaleTimeString('es')} (${dt.toLocaleDateString('es')})`;
+    }
+  } else {
+    const err = await res.json();
+    showToast(`❌ ${err.detail || 'Error al guardar análisis cualitativo'}`, 'error');
+  }
 }
 
 // ── Clients page ─────────────────────────────────────

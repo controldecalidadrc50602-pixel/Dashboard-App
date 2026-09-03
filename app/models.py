@@ -1,4 +1,4 @@
-from sqlalchemy import Column, Integer, String, Float, Boolean, DateTime, ForeignKey, JSON, Text
+from sqlalchemy import Column, Integer, String, Float, Boolean, DateTime, ForeignKey, JSON, Text, UniqueConstraint
 from sqlalchemy.orm import relationship
 from datetime import datetime
 from app.database import Base
@@ -54,6 +54,7 @@ class Client(Base):
     normalized_records = relationship("NormalizedRecord", back_populates="client", cascade="all, delete-orphan")
     kpi_results = relationship("KPIResult", back_populates="client", cascade="all, delete-orphan")
     insights = relationship("AnalysisInsight", back_populates="client", cascade="all, delete-orphan")
+    qualitative_analyses = relationship("ReportQualitativeAnalysis", back_populates="client", cascade="all, delete-orphan")
 
 
 
@@ -288,5 +289,29 @@ class NormalizedRecord(Base):
 
     client = relationship("Client", back_populates="normalized_records")
     import_rel = relationship("ReportImport", back_populates="normalized_records")
+
+
+class ReportQualitativeAnalysis(Base):
+    __tablename__ = "report_qualitative_analysis"
+
+    id = Column(Integer, primary_key=True, index=True)
+    client_id = Column(Integer, ForeignKey("clients.id"), nullable=False, index=True)
+    period = Column(String, nullable=False, index=True)  # YYYY-MM
+
+    # 4 categorías de análisis cualitativo
+    critical_points = Column(Text, nullable=True)   # Puntos Críticos 🔴
+    warnings = Column(Text, nullable=True)           # Advertencias 🟡
+    achievements = Column(Text, nullable=True)       # Logros / Aspectos Positivos 🟢
+    general_info = Column(Text, nullable=True)       # Información General 🔵
+
+    # Metadata
+    created_by = Column(String, nullable=True)
+    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    created_at = Column(DateTime, default=datetime.utcnow)
+
+    client = relationship("Client", back_populates="qualitative_analyses")
+
+    # Constraint único por cliente + período
+    __table_args__ = (UniqueConstraint('client_id', 'period', name='uq_client_period_qualitative'),)
 
 
