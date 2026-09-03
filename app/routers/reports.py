@@ -38,6 +38,25 @@ def list_reports(
     return [_enrich(r) for r in reports]
 
 
+@router.get("/{client_id}/reports/{year}/{month}")
+def get_report_by_period(
+    client_id: int,
+    year: int,
+    month: int,
+    db: Session = Depends(get_db),
+    _=Depends(get_current_user)
+):
+    """Devuelve un reporte mensual específico por cliente, año y mes."""
+    report = db.query(MonthlyReport).filter(
+        MonthlyReport.client_id == client_id,
+        MonthlyReport.year == year,
+        MonthlyReport.month == month
+    ).first()
+    if not report:
+        raise HTTPException(status_code=404, detail="Reporte no encontrado para ese período")
+    return _enrich(report)
+
+
 @router.post("/{client_id}/reports", status_code=201)
 def create_report(
     client_id: int,

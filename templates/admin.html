@@ -1029,50 +1029,45 @@ select.client-select {
       </div>
     </div>
 
-    <div class="form-section" id="sec-mod-chat_sales">
-      <div class="form-section-title">💬 KPIs de Chat</div>
+    <!-- Sección Botmaker (Dinámica: Solo Botmaker o Híbrido) -->
+    <div class="form-section" id="sec-platform-botmaker" style="display:none;">
+      <div class="form-section-title" style="color:#00897b;"><i class="fab fa-whatsapp"></i> Métricas Operativas Botmaker (WhatsApp/Bot)</div>
       <div class="form-grid">
-        <div class="field"><label>Chats gestionados</label><input type="number" id="r-chats" value="0" min="0"></div>
+        <div class="field"><label>Conversaciones totales (chats)</label><input type="number" id="r-bm-conversations" value="0" min="0"></div>
+        <div class="field"><label>Conversaciones con Agente / Soporte</label><input type="number" id="r-bm-agent-conv" value="0" min="0"></div>
+        <div class="field"><label>Conversaciones Solo Bot</label><input type="number" id="r-bm-bot-conv" value="0" min="0"></div>
+        <div class="field"><label>Mensajes Usuario</label><input type="number" id="r-bm-msg-user" value="0" min="0"></div>
+        <div class="field"><label>Mensajes Bot</label><input type="number" id="r-bm-msg-bot" value="0" min="0"></div>
+        <div class="field"><label>Mensajes Agente</label><input type="number" id="r-bm-msg-agent" value="0" min="0"></div>
+        <div class="field"><label>Plantillas Enviadas</label><input type="number" id="r-bm-templates-sent" value="0" min="0"></div>
+        <div class="field"><label>Plantillas Entregadas</label><input type="number" id="r-bm-templates-del" value="0" min="0"></div>
+        <div class="field"><label>Plantillas Leídas</label><input type="number" id="r-bm-templates-read" value="0" min="0"></div>
+        <div class="field"><label>Plantillas Respondidas</label><input type="number" id="r-bm-templates-resp" value="0" min="0"></div>
+      </div>
+    </div>
+
+    <!-- Sección Yeastar (Dinámica: Solo Yeastar o Híbrido) -->
+    <div class="form-section" id="sec-platform-yeastar" style="display:none;">
+      <div class="form-section-title" style="color:#1e88e5;"><i class="fas fa-phone-alt"></i> Métricas Operativas Yeastar (Telefonía/PBX)</div>
+      <div class="form-grid">
+        <div class="field"><label>Total Llamadas</label><input type="number" id="r-ys-total-calls" value="0" min="0"></div>
+        <div class="field"><label>Llamadas Contestadas</label><input type="number" id="r-ys-answered" value="0" min="0"></div>
+        <div class="field"><label>% Tasa de Contacto</label><input type="number" id="r-ys-contact-rate" value="0" min="0" max="100" step="0.1"></div>
+        <div class="field"><label>Llamadas Entrantes</label><input type="number" id="r-ys-inbound" value="0" min="0"></div>
+        <div class="field"><label>Entrantes Contestadas</label><input type="number" id="r-ys-inbound-ans" value="0" min="0"></div>
+        <div class="field"><label>Llamadas Salientes</label><input type="number" id="r-ys-outbound" value="0" min="0"></div>
+        <div class="field"><label>Salientes Contestadas</label><input type="number" id="r-ys-outbound-ans" value="0" min="0"></div>
+      </div>
+    </div>
+
+    <!-- Sección Común (Siempre Visible) -->
+    <div class="form-section">
+      <div class="form-section-title">📊 Métricas Comunes / Negocio</div>
+      <div class="form-grid">
         <div class="field"><label>Leads generados</label><input type="number" id="r-leads" value="0" min="0"></div>
         <div class="field"><label>Ventas cerradas</label><input type="number" id="r-sales" value="0" min="0"></div>
-        <div class="field"><label>Confirmaciones de cita</label><input type="number" id="r-confirmations" value="0" min="0"></div>
-        <div class="field"><label>Tickets de soporte</label><input type="number" id="r-support" value="0" min="0"></div>
-        <div class="field"><label>CSAT (0-5)</label><input type="number" id="r-csat" value="4.5" min="0" max="5" step="0.01"></div>
-      </div>
-    </div>
-
-    <div class="form-section" id="sec-mod-calls">
-      <div class="form-section-title">📞 Llamadas</div>
-      <div class="form-grid">
-        <div class="field"><label>Total llamadas</label><input type="number" id="r-total-calls" value="0" min="0"></div>
-        <div class="field"><label>Llamadas contestadas</label><input type="number" id="r-answered" value="0" min="0"></div>
-        <div class="field"><label>% Tasa de contacto</label><input type="number" id="r-contact-rate" value="0" min="0" max="100" step="0.1"></div>
-        <div class="field"><label>Entrantes totales</label><input type="number" id="r-inbound" value="0" min="0"></div>
-        <div class="field"><label>Entrantes contestadas</label><input type="number" id="r-inbound-ans" value="0" min="0"></div>
-        <div class="field"><label>Salientes totales</label><input type="number" id="r-outbound" value="0" min="0"></div>
-        <div class="field"><label>Salientes contestadas</label><input type="number" id="r-outbound-ans" value="0" min="0"></div>
-      </div>
-    </div>
-
-    <div class="form-section" id="sec-mod-quality_kidoz">
-      <div class="form-section-title">⭐ Calidad de Atención</div>
-      <div class="form-grid">
-        <div class="field"><label>Óptimas (llamadas)</label><input type="number" id="r-kid-opt-c" value="0" min="0"></div>
-        <div class="field"><label>Óptimas (chats)</label><input type="number" id="r-kid-opt-ch" value="0" min="0"></div>
-        <div class="field"><label>Aceptables (llamadas)</label><input type="number" id="r-kid-acc-c" value="0" min="0"></div>
-        <div class="field"><label>Aceptables (chats)</label><input type="number" id="r-kid-acc-ch" value="0" min="0"></div>
-        <div class="field"><label>Deficientes (llamadas)</label><input type="number" id="r-kid-def-c" value="0" min="0"></div>
-        <div class="field"><label>Deficientes (chats)</label><input type="number" id="r-kid-def-ch" value="0" min="0"></div>
-        <div class="field"><label>Total evaluaciones</label><input type="number" id="r-kid-total" value="0" min="0"></div>
-        <div class="field"><label>% Óptimo</label><input type="number" id="r-kid-pct" value="0" min="0" max="100" step="0.1"></div>
-      </div>
-    </div>
-
-    <div class="form-section" id="sec-mod-petopia_vol">
-      <div class="form-section-title">🐾 Volumen Yeastar & Botmaker</div>
-      <div class="form-grid">
-        <div class="field"><label>Yeastar (Llamadas Agentes)</label><input type="number" id="r-pet-yeastar" value="0" min="0"></div>
-        <div class="field"><label>Botmaker (Interacciones Bot)</label><input type="number" id="r-pet-botmaker" value="0" min="0"></div>
+        <div class="field"><label>Confirmaciones de Cita</label><input type="number" id="r-confirmations" value="0" min="0"></div>
+        <div class="field"><label>CSAT Promedio (0-5)</label><input type="number" id="r-csat" value="4.5" min="0" max="5" step="0.01"></div>
       </div>
     </div>
 
@@ -2343,8 +2338,9 @@ async function loadReports() {
 
   if (mods.includes('petopia_vol')) {
     tbody.innerHTML = reports.map(r => {
+      const bm = r.extra_data?.botmaker || {};
       const yVal = r.extra_data?.yeastar_calls || r.total_calls || 0;
-      const bVal = r.extra_data?.botmaker_interactions || 0;
+      const bVal = r.extra_data?.botmaker_interactions || bm.total_conversations || r.chats || 0;
       return `
         <tr>
           <td><strong>${r.month_name} ${r.year}</strong></td>
@@ -2362,26 +2358,31 @@ async function loadReports() {
       `;
     }).join('');
   } else {
-    tbody.innerHTML = reports.map(r => `
-      <tr>
-        <td><strong>${r.month_name} ${r.year}</strong></td>
-        <td>${r.chats.toLocaleString('es')}</td>
-        <td>${r.leads.toLocaleString('es')}</td>
-        <td>${r.sales.toLocaleString('es')}</td>
-        <td>${r.closing_rate}%</td>
-        <td>${r.appointment_confirmations.toLocaleString('es')}</td>
-        <td>${r.support.toLocaleString('es')}</td>
-        <td>${r.csat}</td>
-        <td>${r.total_calls.toLocaleString('es')}</td>
-        <td>${r.kidoz_optimal_pct}%</td>
-        <td>
-          <div class="row-actions">
-            <button class="btn btn-sm btn-secondary btn-icon" onclick="editReport(${JSON.stringify(r).replace(/"/g,'&quot;')})"><i class="fas fa-edit"></i></button>
-            <button class="btn btn-sm btn-danger btn-icon" onclick="deleteReport(${r.id})"><i class="fas fa-trash"></i></button>
-          </div>
-        </td>
-      </tr>
-    `).join('');
+    tbody.innerHTML = reports.map(r => {
+      const bm = r.extra_data?.botmaker || {};
+      const chatVal = r.chats || bm.total_conversations || 0;
+      const supportVal = r.support || bm.conversations_with_agent || bm.total_agent_sessions || 0;
+      return `
+        <tr>
+          <td><strong>${r.month_name} ${r.year}</strong></td>
+          <td>${chatVal.toLocaleString('es')}</td>
+          <td>${r.leads.toLocaleString('es')}</td>
+          <td>${r.sales.toLocaleString('es')}</td>
+          <td>${r.closing_rate}%</td>
+          <td>${r.appointment_confirmations.toLocaleString('es')}</td>
+          <td>${supportVal.toLocaleString('es')}</td>
+          <td>${r.csat}</td>
+          <td>${r.total_calls.toLocaleString('es')}</td>
+          <td>${r.kidoz_optimal_pct}%</td>
+          <td>
+            <div class="row-actions">
+              <button class="btn btn-sm btn-secondary btn-icon" onclick="editReport(${JSON.stringify(r).replace(/"/g,'&quot;')})"><i class="fas fa-edit"></i></button>
+              <button class="btn btn-sm btn-danger btn-icon" onclick="deleteReport(${r.id})"><i class="fas fa-trash"></i></button>
+            </div>
+          </td>
+        </tr>
+      `;
+    }).join('');
   }
 }
 
@@ -2391,25 +2392,44 @@ function openReportModal() {
   document.getElementById('r-id').value = '';
   document.getElementById('r-year').value = new Date().getFullYear();
   document.getElementById('r-month').value = new Date().getMonth() + 1;
-  ['r-chats','r-leads','r-sales','r-confirmations','r-support','r-total-calls',
-   'r-answered','r-inbound','r-inbound-ans','r-outbound','r-outbound-ans',
-   'r-kid-opt-c','r-kid-opt-ch','r-kid-acc-c','r-kid-acc-ch','r-kid-def-c',
-   'r-kid-def-ch','r-kid-total','r-pet-yeastar','r-pet-botmaker'].forEach(id => {
+
+  // Reset todos los campos del formulario
+  ['r-bm-conversations','r-bm-agent-conv','r-bm-bot-conv','r-bm-msg-user',
+   'r-bm-msg-bot','r-bm-msg-agent','r-bm-templates-sent','r-bm-templates-del',
+   'r-bm-templates-read','r-bm-templates-resp','r-ys-total-calls','r-ys-answered',
+   'r-ys-contact-rate','r-ys-inbound','r-ys-inbound-ans','r-ys-outbound',
+   'r-ys-outbound-ans','r-leads','r-sales','r-confirmations'].forEach(id => {
      const el = document.getElementById(id);
      if (el) el.value = 0;
    });
   document.getElementById('r-csat').value = 4.5;
-  document.getElementById('r-contact-rate').value = 0;
-  document.getElementById('r-kid-pct').value = 0;
   document.getElementById('r-notes').value = '';
 
-  // Show/Hide sections depending on current client's kpi_modules
+  // Determinar secciones dinámicas según la plataforma del cliente
   const clientObj = getCurrentClientObj();
-  const mods = clientObj ? (clientObj.kpi_modules || []) : [];
-  document.getElementById('sec-mod-chat_sales').style.display = mods.includes('chat_sales') ? 'block' : 'none';
-  document.getElementById('sec-mod-calls').style.display = mods.includes('calls') ? 'block' : 'none';
-  document.getElementById('sec-mod-quality_kidoz').style.display = mods.includes('quality_kidoz') ? 'block' : 'none';
-  document.getElementById('sec-mod-petopia_vol').style.display = mods.includes('petopia_vol') ? 'block' : 'none';
+  let hasBm = false;
+  let hasYs = false;
+
+  if (clientObj) {
+    hasBm = !!clientObj.has_botmaker;
+    hasYs = !!clientObj.has_yeastar;
+    const mods = clientObj.kpi_modules || [];
+    if (!hasBm && !hasYs) {
+      if (mods.includes('chat_sales') || mods.includes('petopia_vol') || mods.includes('botmaker')) hasBm = true;
+      if (mods.includes('calls') || mods.includes('petopia_vol') || mods.includes('yeastar')) hasYs = true;
+    }
+  }
+
+  // Si no se especifica ninguna, activar ambas secciones
+  if (!hasBm && !hasYs) {
+    hasBm = true;
+    hasYs = true;
+  }
+
+  const secBm = document.getElementById('sec-platform-botmaker');
+  const secYs = document.getElementById('sec-platform-yeastar');
+  if (secBm) secBm.style.display = hasBm ? 'block' : 'none';
+  if (secYs) secYs.style.display = hasYs ? 'block' : 'none';
 
   document.getElementById('reportModalTitle').textContent = '➕ Agregar mes';
   openModal('reportModal');
@@ -2420,66 +2440,87 @@ function editReport(r) {
   document.getElementById('r-id').value = r.id;
   document.getElementById('r-year').value = r.year;
   document.getElementById('r-month').value = r.month;
-  document.getElementById('r-chats').value = r.chats;
-  document.getElementById('r-leads').value = r.leads;
-  document.getElementById('r-sales').value = r.sales;
-  document.getElementById('r-confirmations').value = r.appointment_confirmations;
-  document.getElementById('r-support').value = r.support;
-  document.getElementById('r-csat').value = r.csat;
-  document.getElementById('r-total-calls').value = r.total_calls;
-  document.getElementById('r-answered').value = r.answered_calls;
-  document.getElementById('r-contact-rate').value = r.contact_rate;
-  document.getElementById('r-inbound').value = r.inbound_calls;
-  document.getElementById('r-inbound-ans').value = r.inbound_answered;
-  document.getElementById('r-outbound').value = r.outbound_calls;
-  document.getElementById('r-outbound-ans').value = r.outbound_answered;
-  document.getElementById('r-kid-opt-c').value = r.kidoz_optimal_calls;
-  document.getElementById('r-kid-opt-ch').value = r.kidoz_optimal_chats;
-  document.getElementById('r-kid-acc-c').value = r.kidoz_acceptable_calls;
-  document.getElementById('r-kid-acc-ch').value = r.kidoz_acceptable_chats;
-  document.getElementById('r-kid-def-c').value = r.kidoz_deficient_calls;
-  document.getElementById('r-kid-def-ch').value = r.kidoz_deficient_chats;
-  document.getElementById('r-kid-total').value = r.kidoz_total_evaluations;
-  document.getElementById('r-kid-pct').value = r.kidoz_optimal_pct;
-  document.getElementById('r-pet-yeastar').value = r.extra_data?.yeastar_calls || r.total_calls || 0;
-  document.getElementById('r-pet-botmaker').value = r.extra_data?.botmaker_interactions || 0;
-  document.getElementById('r-notes').value = r.notes || '';
+
+  // 1. Extraer métricas de Botmaker
+  const bm = r.extra_data?.botmaker || {};
+  const convTot = bm.total_conversations || r.chats || 0;
+  const convAgent = bm.conversations_with_agent || bm.total_agent_sessions || r.support || 0;
+  const convBot = bm.conversations_bot_only || (convTot - convAgent > 0 ? convTot - convAgent : 0);
+
+  if (document.getElementById('r-bm-conversations')) document.getElementById('r-bm-conversations').value = convTot;
+  if (document.getElementById('r-bm-agent-conv')) document.getElementById('r-bm-agent-conv').value = convAgent;
+  if (document.getElementById('r-bm-bot-conv')) document.getElementById('r-bm-bot-conv').value = convBot;
+  if (document.getElementById('r-bm-msg-user')) document.getElementById('r-bm-msg-user').value = bm.total_messages_user || 0;
+  if (document.getElementById('r-bm-msg-bot')) document.getElementById('r-bm-msg-bot').value = bm.total_messages_bot || 0;
+  if (document.getElementById('r-bm-msg-agent')) document.getElementById('r-bm-msg-agent').value = bm.total_messages_agent || 0;
+  if (document.getElementById('r-bm-templates-sent')) document.getElementById('r-bm-templates-sent').value = bm.total_templates_sent || 0;
+  if (document.getElementById('r-bm-templates-del')) document.getElementById('r-bm-templates-del').value = bm.total_templates_delivered || 0;
+  if (document.getElementById('r-bm-templates-read')) document.getElementById('r-bm-templates-read').value = bm.total_templates_read || 0;
+  if (document.getElementById('r-bm-templates-resp')) document.getElementById('r-bm-templates-resp').value = bm.total_templates_responded || 0;
+
+  // 2. Extraer métricas de Yeastar
+  const ysTotal = r.total_calls || r.extra_data?.yeastar_calls || 0;
+  if (document.getElementById('r-ys-total-calls')) document.getElementById('r-ys-total-calls').value = ysTotal;
+  if (document.getElementById('r-ys-answered')) document.getElementById('r-ys-answered').value = r.answered_calls || 0;
+  if (document.getElementById('r-ys-contact-rate')) document.getElementById('r-ys-contact-rate').value = r.contact_rate || 0;
+  if (document.getElementById('r-ys-inbound')) document.getElementById('r-ys-inbound').value = r.inbound_calls || 0;
+  if (document.getElementById('r-ys-inbound-ans')) document.getElementById('r-ys-inbound-ans').value = r.inbound_answered || 0;
+  if (document.getElementById('r-ys-outbound')) document.getElementById('r-ys-outbound').value = r.outbound_calls || 0;
+  if (document.getElementById('r-ys-outbound-ans')) document.getElementById('r-ys-outbound-ans').value = r.outbound_answered || 0;
+
+  // 3. Extraer métricas comunes
+  if (document.getElementById('r-leads')) document.getElementById('r-leads').value = r.leads || 0;
+  if (document.getElementById('r-sales')) document.getElementById('r-sales').value = r.sales || 0;
+  if (document.getElementById('r-confirmations')) document.getElementById('r-confirmations').value = r.appointment_confirmations || 0;
+  if (document.getElementById('r-csat')) document.getElementById('r-csat').value = r.csat || 4.5;
+  if (document.getElementById('r-notes')) document.getElementById('r-notes').value = r.notes || '';
+
   document.getElementById('reportModalTitle').textContent = '✏️ Editar mes';
 }
 
 function getReportBody() {
-  const yeastarVal = +document.getElementById('r-pet-yeastar').value;
-  const botmakerVal = +document.getElementById('r-pet-botmaker').value;
+  const bmConversations = +(document.getElementById('r-bm-conversations')?.value || 0);
+  const bmAgentConv = +(document.getElementById('r-bm-agent-conv')?.value || 0);
+
+  const ysTotalCalls = +(document.getElementById('r-ys-total-calls')?.value || 0);
+  const ysAnswered = +(document.getElementById('r-ys-answered')?.value || 0);
+  const ysContactRate = +(document.getElementById('r-ys-contact-rate')?.value || 0);
+
+  const bmExtra = {
+    total_conversations: bmConversations,
+    conversations_with_agent: bmAgentConv,
+    conversations_bot_only: +(document.getElementById('r-bm-bot-conv')?.value || 0),
+    total_messages_user: +(document.getElementById('r-bm-msg-user')?.value || 0),
+    total_messages_bot: +(document.getElementById('r-bm-msg-bot')?.value || 0),
+    total_messages_agent: +(document.getElementById('r-bm-msg-agent')?.value || 0),
+    total_templates_sent: +(document.getElementById('r-bm-templates-sent')?.value || 0),
+    total_templates_delivered: +(document.getElementById('r-bm-templates-del')?.value || 0),
+    total_templates_read: +(document.getElementById('r-bm-templates-read')?.value || 0),
+    total_templates_responded: +(document.getElementById('r-bm-templates-resp')?.value || 0)
+  };
+
   return {
     year: +document.getElementById('r-year').value,
     month: +document.getElementById('r-month').value,
-    chats: +document.getElementById('r-chats').value,
-    leads: +document.getElementById('r-leads').value,
-    sales: +document.getElementById('r-sales').value,
-    appointment_confirmations: +document.getElementById('r-confirmations').value,
-    support: +document.getElementById('r-support').value,
-    csat: +document.getElementById('r-csat').value,
-    total_calls: +document.getElementById('r-total-calls').value || yeastarVal,
-    answered_calls: +document.getElementById('r-answered').value,
-    contact_rate: +document.getElementById('r-contact-rate').value,
-    inbound_calls: +document.getElementById('r-inbound').value,
-    inbound_answered: +document.getElementById('r-inbound-ans').value,
-    outbound_calls: +document.getElementById('r-outbound').value,
-    outbound_answered: +document.getElementById('r-outbound-ans').value,
-    kidoz_optimal_calls: +document.getElementById('r-kid-opt-c').value,
-    kidoz_optimal_chats: +document.getElementById('r-kid-opt-ch').value,
-    kidoz_acceptable_calls: +document.getElementById('r-kid-acc-c').value,
-    kidoz_acceptable_chats: +document.getElementById('r-kid-acc-ch').value,
-    kidoz_deficient_calls: +document.getElementById('r-kid-def-c').value,
-    kidoz_deficient_chats: +document.getElementById('r-kid-def-ch').value,
-    kidoz_total_evaluations: +document.getElementById('r-kid-total').value,
-    kidoz_optimal_pct: +document.getElementById('r-kid-pct').value,
+    chats: bmConversations,
+    support: bmAgentConv,
+    leads: +(document.getElementById('r-leads')?.value || 0),
+    sales: +(document.getElementById('r-sales')?.value || 0),
+    appointment_confirmations: +(document.getElementById('r-confirmations')?.value || 0),
+    csat: +(document.getElementById('r-csat')?.value || 4.5),
+    total_calls: ysTotalCalls,
+    answered_calls: ysAnswered,
+    contact_rate: ysContactRate,
+    inbound_calls: +(document.getElementById('r-ys-inbound')?.value || 0),
+    inbound_answered: +(document.getElementById('r-ys-inbound-ans')?.value || 0),
+    outbound_calls: +(document.getElementById('r-ys-outbound')?.value || 0),
+    outbound_answered: +(document.getElementById('r-ys-outbound-ans')?.value || 0),
+    notes: document.getElementById('r-notes')?.value || null,
     extra_data: {
-      yeastar_calls: yeastarVal,
-      botmaker_interactions: botmakerVal,
-      total_interactions: yeastarVal + botmakerVal
-    },
-    notes: document.getElementById('r-notes').value || null
+      botmaker: bmExtra,
+      botmaker_interactions: bmConversations,
+      yeastar_calls: ysTotalCalls
+    }
   };
 }
 
