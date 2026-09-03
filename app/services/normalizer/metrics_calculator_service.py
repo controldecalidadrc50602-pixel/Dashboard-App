@@ -48,6 +48,60 @@ def calculate_base_metrics(db: Session, import_id: int) -> Dict[str, Any]:
         t = r.typification or "Sin Tipificar"
         typification_counts[t] = typification_counts.get(t, 0) + 1
 
+    # 8. Métricas especializadas Botmaker por tipo de reporte
+    first_record = records[0] if records else None
+    rep_type_l = (first_record.report_type or "").lower() if first_record else ""
+
+    botmaker_metrics: Dict[str, Any] = {}
+    if "operator" in rep_type_l or "debug" in rep_type_l:
+        total_sessions = len(records)
+        total_closed = sum((r.normalized_data or {}).get("closed_conversations", 0) for r in records)
+        times = [(r.normalized_data or {}).get("avg_response_time_seconds") for r in records if (r.normalized_data or {}).get("avg_response_time_seconds") is not None]
+        avg_resp = round(sum(times) / len(times), 2) if times else None
+        transfers = sum((r.normalized_data or {}).get("transfers_received", 0) for r in records)
+        agents = sorted(list(set(r.agent for r in records if r.agent)))
+
+        botmaker_metrics = {
+            "total_agent_sessions": total_sessions,
+            "total_closed_conversations": total_closed,
+            "avg_response_time": avg_resp,
+            "total_transfers_received": transfers,
+            "agents_list": agents,
+            "typifications": typification_counts
+        }
+    elif "user" in rep_type_l:
+        total_convs = len(records)
+        convs_agent = sum(1 for r in records if (r.normalized_data or {}).get("spoke_agent") == 1)
+        convs_bot = total_convs - convs_agent
+        msg_user_tot = sum((r.normalized_data or {}).get("user_messages", 0) for r in records)
+        msg_bot_tot = sum((r.normalized_data or {}).get("bot_messages", 0) for r in records)
+        msg_agent_tot = sum((r.normalized_data or {}).get("agent_messages", 0) for r in records)
+
+        botmaker_metrics = {
+            "total_conversations": total_convs,
+            "conversations_with_agent": convs_agent,
+            "conversations_bot_only": convs_bot,
+            "total_messages_user": msg_user_tot,
+            "total_messages_bot": msg_bot_tot,
+            "total_messages_agent": msg_agent_tot
+        }
+    elif "session" in rep_type_l or "cause" in rep_type_l or "plantilla" in rep_type_l:
+        total_sent = sum(1 for r in records if (r.normalized_data or {}).get("sent") is True)
+        total_delivered = sum(1 for r in records if (r.normalized_data or {}).get("delivered") is True)
+        total_read = sum(1 for r in records if (r.normalized_data or {}).get("read") is True)
+        total_responded = sum(1 for r in records if (r.normalized_data or {}).get("responded") is True)
+        total_failed = sum(1 for r in records if (r.normalized_data or {}).get("failed") is True)
+        new_users = sum(1 for r in records if (r.normalized_data or {}).get("new_user") is True)
+
+        botmaker_metrics = {
+            "total_templates_sent": total_sent,
+            "total_templates_delivered": total_delivered,
+            "total_templates_read": total_read,
+            "total_templates_responded": total_responded,
+            "total_templates_failed": total_failed,
+            "new_users": new_users
+        }
+
     return {
         "summary": {
             "total_records": total_records,
@@ -104,5 +158,6 @@ def calculate_base_metrics(db: Session, import_id: int) -> Dict[str, Any]:
                 "limitations": "Es NULL si no se dispone de marcas de tiempo de inicio y fin."
             }
         },
-        "typifications_breakdown": typification_counts
+        "typifications_breakdown": typification_counts,
+        "botmaker_metrics": botmaker_metrics
     }

@@ -116,7 +116,8 @@ async def upload_and_import_file(
         all_rows = [analysis.get("headers", [])] + analysis.get("sample_rows", [])
 
     # 5. Validar estructura por fila (Sin pérdida silenciosa de datos)
-    rep_type_final = report_type or ("users" if "users" in filename.lower() else "operatorsSessionsDebug" if "operators" in filename.lower() else "sessionStartingCauses" if "session" in filename.lower() else "generic")
+    detected_rep_type = analysis.get("report_type") or "generic"
+    rep_type_final = report_type or (detected_rep_type if detected_rep_type != "generic" else ("users" if "users" in filename.lower() else "operatorsSessionsDebug" if ("operators" in filename.lower() or "debug" in filename.lower()) else "sessionStartingCauses" if ("session" in filename.lower() or "plantilla" in filename.lower()) else "generic"))
     status, warnings, errors = validate_import_structure(source_code, rep_type_final, analysis, all_rows)
 
     # 6. Registrar en Base de Datos

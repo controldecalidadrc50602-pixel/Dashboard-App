@@ -15,25 +15,52 @@ class BotmakerSessionsParser(BaseParser):
 
         headers_map = {h.lower(): h for h in headers}
 
-        def get_val(key_fragment: str) -> str:
-            for k_lower, original_key in headers_map.items():
-                if key_fragment in k_lower:
-                    return raw_dict.get(original_key, "")
+        def get_val(fragments: List[str]) -> str:
+            # Prioridad 1: Coincidencia exacta
+            for frag in fragments:
+                for k_lower, original_key in headers_map.items():
+                    if frag == k_lower:
+                        return raw_dict.get(original_key, "")
+            # Prioridad 2: Subcadena excluyendo negaciones explícitas
+            for frag in fragments:
+                for k_lower, original_key in headers_map.items():
+                    if frag in k_lower:
+                        if frag in ["enviado", "sent"] and any(neg in k_lower for neg in ["no ", "not ", "fall"]):
+                            continue
+                        return raw_dict.get(original_key, "")
             return ""
 
-        user_val = get_val("user") or get_val("usuario") or get_val("contact")
-        channel_val = get_val("channel") or get_val("canal")
-        template_val = get_val("template") or get_val("plantilla")
-        ts_val = get_val("timestamp") or get_val("date") or get_val("fecha") or get_val("time")
-        responded_val = get_val("responded") or get_val("respondido")
+        def to_bool(val: Any) -> bool:
+            if val is None:
+                return False
+            v = str(val).strip().lower()
+            return v in ["true", "1", "si", "sí", "verdadero", "yes", "t"]
+
+        user_val = get_val(["id contacto", "contacto", "id usuario", "usuario", "contact", "user"])
+        channel_val = get_val(["id canal", "canal", "channel"])
+        template_val = get_val(["nombre plantilla/notificación", "nombre plantilla", "plantilla", "template"])
+        ts_val = get_val(["fecha/tiempo inicio sesión", "fecha/tiempo inicio sesion", "fecha/tiempo envío", "timestamp", "inicio", "date"])
+        
+        new_user = to_bool(get_val(["usuario nuevo", "new user"]))
+        failed = to_bool(get_val(["no enviado", "failed"]))
+        sent = to_bool(get_val(["enviado", "sent"]))
+        delivered = to_bool(get_val(["entregado", "delivered"]))
+        read = to_bool(get_val(["leída", "leida", "read"]))
+        responded = to_bool(get_val(["respondida", "responded"]))
+        fail_reason = get_val(["razón falla envío", "razon falla envio", "detalle falla envío"])
+        agent_groups = get_val(["grupos agente", "agent groups"])
+
+        # Inferencia lógica: si fue entregado o leído, fue enviado
+        if (delivered or read or responded) and not failed:
+            sent = True
 
         start_at = self.parse_datetime(ts_val)
-        responded_bool = self.parse_bool(responded_val)
 
-        # Si hay datos de respuesta: si no respondió, se considera abandonado/no atendido
         is_abandoned = None
-        if responded_bool is not None:
-            is_abandoned = not responded_bool
+        if responded:
+            is_abandoned = False
+        elif failed:
+            is_abandoned = True
 
         if not user_val:
             warnings.append({
@@ -64,7 +91,15 @@ class BotmakerSessionsParser(BaseParser):
             "raw_data": raw_dict,
             "normalized_data": {
                 "report_family": "botmaker_session_causes",
-                "template": self.clean_str(template_val),
+                "template_name": self.clean_str(template_val),
+                "sent": sent,
+                "delivered": delivered,
+                "read": read,
+                "responded": responded,
+                "failed": failed,
+                "new_user": new_user,
+                "fail_reason": self.clean_str(fail_reason),
+                "agent_groups": self.clean_str(agent_groups),
                 "parsed_at_row": row_number
             },
             "warnings": warnings

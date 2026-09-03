@@ -80,6 +80,13 @@ class BaseParser(ABC):
         if match_sec:
             return float(match_sec.group(1))
 
+        # Ejemplo: "1m 20s", "1m", "20s"
+        match_min_sec = re.match(r'^(?:(\d+)\s*m(?:in)?)?\s*(?:(\d+(?:\.\d+)?)\s*s(?:ec|eg)?)?$', s, re.IGNORECASE)
+        if match_min_sec and (match_min_sec.group(1) or match_min_sec.group(2)):
+            mins = float(match_min_sec.group(1) or 0)
+            secs = float(match_min_sec.group(2) or 0)
+            return mins * 60 + secs
+
         # Ejemplo: "MM:SS" o "HH:MM:SS"
         parts = s.split(":")
         if len(parts) == 2:

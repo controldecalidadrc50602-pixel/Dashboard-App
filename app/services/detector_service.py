@@ -52,6 +52,50 @@ def extract_period_from_filename(filename: str) -> Optional[str]:
     return None
 
 
+def is_description_row(row: List[str], headers: List[str]) -> bool:
+    """Detecta si una fila contiene descripciones o leyendas explicativas secundarias de columnas."""
+    if not row:
+        return False
+    row_text = " ".join(str(c) for c in row).lower()
+    indicators = [
+        "identificador", "descripción", "descripcion", "tiempo promedio",
+        "indica si", "fecha y hora", "link a la", "número de", "numero de",
+        "cantidad de veces", "nombre del agente"
+    ]
+    matches = sum(1 for ind in indicators if ind in row_text)
+    if matches >= 2:
+        return True
+    long_desc_cells = sum(1 for c in row if len(str(c).strip()) > 25 and " " in str(c).strip())
+    if long_desc_cells >= 3:
+        return True
+    return False
+
+
+def detect_botmaker_report_type(headers: List[str], filename: str) -> str:
+    """Detecta automáticamente el tipo de reporte Botmaker por nombre de archivo o columnas (español e inglés)."""
+    fn = (filename or "").lower()
+    hl = [str(h).lower() for h in headers]
+    hl_str = " ".join(hl)
+
+    # 1. Por columnas
+    if any(k in hl_str for k in ["conversaciones cerradas", "tiempo medio de respuesta", "transferencias recibidas", "operatorssessions"]):
+        return "operatorsSessionsDebug"
+    if any(k in hl_str for k in ["plantilla", "template", "no enviado", "entregado", "leída", "leida", "respondida", "sessionstartingcauses"]):
+        return "sessionStartingCauses"
+    if any(k in hl_str for k in ["habló el agente", "hablo el agente", "mensajes bot", "mensajes usuario", "mensajes agente", "link conversación", "link conversacion"]):
+        return "users"
+
+    # 2. Por nombre de archivo
+    if "operator" in fn or "debug" in fn:
+        return "operatorsSessionsDebug"
+    if "session" in fn or "cause" in fn or "plantilla" in fn:
+        return "sessionStartingCauses"
+    if "user" in fn:
+        return "users"
+
+    return "generic"
+
+
 def analyze_file_content(content: bytes, filename: str) -> Dict[str, Any]:
     """
     Analiza el archivo RAW y extrae metadata estructural:
@@ -75,17 +119,27 @@ def analyze_file_content(content: bytes, filename: str) -> Dict[str, Any]:
             "headers": [],
             "sample_rows": [],
             "total_rows": 0,
-            "period": extract_period_from_filename(filename) or "requiere_confirmacion"
+            "period": extract_period_from_filename(filename) or "requiere_confirmacion",
+            "report_type": "generic"
         }
 
     reader = csv.reader(lines, delimiter=delimiter)
     all_rows = list(reader)
 
     headers = all_rows[0] if all_rows else []
-    sample_rows = all_rows[1:11] if len(all_rows) > 1 else []
-    total_rows = max(0, len(all_rows) - 1)
+    
+    # Filtrar fila 2 si es encabezado secundario de descripciones (operatorsSessionsDebug)
+    data_rows = all_rows[1:]
+    has_description_header = False
+    if data_rows and is_description_row(data_rows[0], headers):
+        data_rows = data_rows[1:]
+        has_description_header = True
+
+    sample_rows = data_rows[:10] if data_rows else []
+    total_rows = len(data_rows)
 
     period = extract_period_from_filename(filename) or "requiere_confirmacion"
+    report_type = detect_botmaker_report_type(headers, filename)
 
     return {
         "format": ext,
@@ -94,7 +148,9 @@ def analyze_file_content(content: bytes, filename: str) -> Dict[str, Any]:
         "headers": headers,
         "sample_rows": sample_rows,
         "total_rows": total_rows,
-        "period": period
+        "period": period,
+        "report_type": report_type,
+        "has_description_header": has_description_header
     }
 
 

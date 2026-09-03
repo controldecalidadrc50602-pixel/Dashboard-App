@@ -1,10 +1,32 @@
 from typing import Dict, Any, List, Tuple
+from app.services.detector_service import is_description_row
 
-# Definición conceptual de firmas esperadas para reportes Botmaker
-BOTMAKER_EXPECTED_HEADERS = {
-    "users": ["conversation", "date", "time", "session", "channel", "contact", "agent", "messages"],
-    "operatorsSessionsDebug": ["session", "user", "start", "end", "agent", "queue", "typification", "wait"],
-    "sessionStartingCauses": ["user", "contact", "channel", "template", "sent", "delivered", "read"]
+# Definición conceptual de firmas esperadas para reportes Botmaker (Español e Inglés)
+BOTMAKER_EXPECTED_CLUSTERS = {
+    "users": [
+        ["conversation", "conversación", "conversacion", "link"],
+        ["date", "fecha"],
+        ["session", "sesión", "sesion"],
+        ["channel", "canal"],
+        ["contact", "contacto", "user", "usuario", "número", "numero"],
+        ["agent", "agente", "habló el agente", "hablo el agente"],
+        ["messages", "mensajes"]
+    ],
+    "operatorsSessionsDebug": [
+        ["session", "sesión", "sesion"],
+        ["user", "usuario"],
+        ["start", "inicio"],
+        ["agent", "agente"],
+        ["queue", "cola"],
+        ["typification", "tipificación", "tipificacion"]
+    ],
+    "sessionStartingCauses": [
+        ["user", "usuario", "contact", "contacto"],
+        ["channel", "canal"],
+        ["template", "plantilla", "notificación", "notificacion"],
+        ["sent", "enviado"],
+        ["delivered", "entregado"]
+    ]
 }
 
 # Definición de reportes Yeastar (Marcados como NO VERIFICADO — REQUIERE ARCHIVO DE MUESTRA)
@@ -47,23 +69,31 @@ def validate_import_structure(
             "severity": "WARNING"
         })
 
-    # 3. Validación de Botmaker
+    # 3. Validación de Botmaker (Bilingüe Español / Inglés)
     elif source_code == "botmaker":
-        expected_keys = BOTMAKER_EXPECTED_HEADERS.get(report_type, [])
-        if expected_keys:
+        clusters = BOTMAKER_EXPECTED_CLUSTERS.get(report_type, [])
+        if clusters:
             headers_lower = [h.lower() for h in headers]
-            missing_keys = [k for k in expected_keys if not any(k in h for h in headers_lower)]
-            if missing_keys:
+            missing_labels = []
+            for cluster in clusters:
+                found = any(any(syn in h for syn in cluster) for h in headers_lower)
+                if not found:
+                    missing_labels.append(cluster[0])
+            if missing_labels:
                 warnings.append({
                     "row": 0,
                     "field": "headers",
-                    "message": f"Columnas clave omitidas o diferentes en reporte '{report_type}': {', '.join(missing_keys)}",
+                    "message": f"Columnas clave no detectadas en reporte '{report_type}': {', '.join(missing_labels)}",
                     "severity": "WARNING"
                 })
 
     # 4. Validación Fila por Fila (Garantizar NO pérdida silenciosa de datos)
     expected_col_count = len(headers)
     for idx, row in enumerate(all_rows[1:], start=2):
+        # Ignorar fila 2 si es encabezado secundario de descripciones
+        if idx == 2 and is_description_row(row, headers):
+            continue
+
         if len(row) != expected_col_count:
             warnings.append({
                 "row": idx,

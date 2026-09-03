@@ -115,6 +115,10 @@ def process_and_normalize_import(db: Session, import_id: int) -> Tuple[ReportImp
     for idx, row in enumerate(all_rows[1:], start=2):
         parsed = parser.parse_row(row, headers, row_number=idx)
 
+        # Omitir fila de encabezado secundario de descripciones
+        if parsed.get("is_description_header"):
+            continue
+
         nr = NormalizedRecord(
             client_id=imp.client_id,
             import_id=imp.id,
@@ -151,7 +155,68 @@ def process_and_normalize_import(db: Session, import_id: int) -> Tuple[ReportImp
     # 4. Guardar en bloque en la BD
     db.bulk_save_objects(normalized_objects)
     
-    # Actualizar estado del ReportImport
+    # 5. Cálculo de métricas específicas Botmaker según requerimiento
+    calculated_metrics: Dict[str, Any] = {}
+    rep_type_l = (imp.report_type or "").lower()
+
+    if "operator" in rep_type_l or "debug" in rep_type_l:
+        total_sessions = len(normalized_objects)
+        total_closed = sum(nr.normalized_data.get("closed_conversations", 0) for nr in normalized_objects)
+        times = [nr.normalized_data.get("avg_response_time_seconds") for nr in normalized_objects if nr.normalized_data.get("avg_response_time_seconds") is not None]
+        avg_resp = round(sum(times) / len(times), 2) if times else None
+        transfers = sum(nr.normalized_data.get("transfers_received", 0) for nr in normalized_objects)
+        agents = sorted(list(set(nr.agent for nr in normalized_objects if nr.agent)))
+        typs: Dict[str, int] = {}
+        for nr in normalized_objects:
+            t = nr.typification or "Sin Tipificar"
+            typs[t] = typs.get(t, 0) + 1
+
+        calculated_metrics = {
+            "total_agent_sessions": total_sessions,
+            "total_closed_conversations": total_closed,
+            "avg_response_time": avg_resp,
+            "total_transfers_received": transfers,
+            "agents_list": agents,
+            "typifications": typs
+        }
+    elif "user" in rep_type_l:
+        total_convs = len(normalized_objects)
+        convs_agent = sum(1 for nr in normalized_objects if nr.normalized_data.get("spoke_agent") == 1)
+        convs_bot = total_convs - convs_agent
+        msg_user_tot = sum(nr.normalized_data.get("user_messages", 0) for nr in normalized_objects)
+        msg_bot_tot = sum(nr.normalized_data.get("bot_messages", 0) for nr in normalized_objects)
+        msg_agent_tot = sum(nr.normalized_data.get("agent_messages", 0) for nr in normalized_objects)
+
+        calculated_metrics = {
+            "total_conversations": total_convs,
+            "conversations_with_agent": convs_agent,
+            "conversations_bot_only": convs_bot,
+            "total_messages_user": msg_user_tot,
+            "total_messages_bot": msg_bot_tot,
+            "total_messages_agent": msg_agent_tot
+        }
+    elif "session" in rep_type_l or "cause" in rep_type_l or "plantilla" in rep_type_l:
+        total_sent = sum(1 for nr in normalized_objects if nr.normalized_data.get("sent") is True)
+        total_delivered = sum(1 for nr in normalized_objects if nr.normalized_data.get("delivered") is True)
+        total_read = sum(1 for nr in normalized_objects if nr.normalized_data.get("read") is True)
+        total_responded = sum(1 for nr in normalized_objects if nr.normalized_data.get("responded") is True)
+        total_failed = sum(1 for nr in normalized_objects if nr.normalized_data.get("failed") is True)
+        new_users = sum(1 for nr in normalized_objects if nr.normalized_data.get("new_user") is True)
+
+        calculated_metrics = {
+            "total_templates_sent": total_sent,
+            "total_templates_delivered": total_delivered,
+            "total_templates_read": total_read,
+            "total_templates_responded": total_responded,
+            "total_templates_failed": total_failed,
+            "new_users": new_users
+        }
+
+    # Actualizar estado y metadata del ReportImport
+    meta = dict(imp.metadata_info or {})
+    meta["calculated_metrics"] = calculated_metrics
+    imp.metadata_info = meta
+
     final_status = "PROCESSED_WITH_WARNINGS" if warnings_count > 0 else "PROCESSED"
     imp.status = final_status
     db.commit()
@@ -164,7 +229,8 @@ def process_and_normalize_import(db: Session, import_id: int) -> Tuple[ReportImp
         "valid_records": valid_count,
         "records_with_warnings": warnings_count,
         "total_warnings": total_warnings_count,
-        "status": final_status
+        "status": final_status,
+        "calculated_metrics": calculated_metrics
     }
 
     return imp, summary
